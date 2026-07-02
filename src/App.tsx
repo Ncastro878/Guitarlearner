@@ -6,6 +6,7 @@ import { warmUpAudio } from "./lib/tones";
 import type { DetectedNote } from "./lib/theory";
 import { Home } from "./components/Home";
 import { NoteHunt } from "./game/NoteHunt";
+import { IntervalEcho } from "./game/IntervalEcho";
 import { ComingSoon } from "./components/ComingSoon";
 
 export type Screen = "home" | GameModeId;
@@ -82,9 +83,19 @@ export default function App() {
           />
         )}
 
-        {(screen === "intervalEcho" ||
-          screen === "arpeggioGauntlet" ||
-          screen === "scaleRunner") && (
+        {screen === "intervalEcho" && (
+          <IntervalEcho
+            pitch={pitchProps}
+            soundEffects={settings.soundEffects}
+            a4={settings.a4}
+            bestStreak={progress.intervalEcho.bestStreak}
+            unlockedLevel={progress.intervalEcho.unlockedLevel}
+            onRecord={(o) => recordResult("intervalEcho", o)}
+            onExit={goHome}
+          />
+        )}
+
+        {(screen === "arpeggioGauntlet" || screen === "scaleRunner") && (
           <ComingSoon mode={screen} onExit={goHome} />
         )}
       </div>

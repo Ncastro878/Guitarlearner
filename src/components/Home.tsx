@@ -31,7 +31,7 @@ const MODES: ModeCard[] = [
     title: "Interval Echo",
     emoji: "🎵",
     blurb: "Hear a root, play the interval above it.",
-    ready: false,
+    ready: true,
   },
   {
     id: "arpeggioGauntlet",

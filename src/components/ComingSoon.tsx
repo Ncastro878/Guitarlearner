@@ -1,20 +1,14 @@
 /**
  * ComingSoon — placeholder for the game modes that are architected but not yet
- * implemented (Interval Echo, Arpeggio Gauntlet, Scale Runner).
+ * implemented (Arpeggio Gauntlet, Scale Runner).
  */
 
 import type { GameModeId } from "../store/progress";
 
 const MODE_INFO: Record<
-  Exclude<GameModeId, "noteHunt">,
+  Exclude<GameModeId, "noteHunt" | "intervalEcho">,
   { title: string; blurb: string; emoji: string }
 > = {
-  intervalEcho: {
-    title: "Interval Echo",
-    emoji: "🎵",
-    blurb:
-      "The game plays a root note, then asks you to find an interval above it on your guitar. Trains your ear and your fretboard together.",
-  },
   arpeggioGauntlet: {
     title: "Arpeggio Gauntlet",
     emoji: "🎸",
@@ -33,7 +27,7 @@ export function ComingSoon({
   mode,
   onExit,
 }: {
-  mode: Exclude<GameModeId, "noteHunt">;
+  mode: Exclude<GameModeId, "noteHunt" | "intervalEcho">;
   onExit: () => void;
 }) {
   const info = MODE_INFO[mode];
