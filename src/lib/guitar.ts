@@ -43,3 +43,40 @@ export const MAX_GUITAR_FREQUENCY = 1400; // ~F6, above the 24th-fret high E
 /** Lowest / highest MIDI notes we consider "on a guitar". */
 export const MIN_GUITAR_MIDI = parseNote("E2").midi; // 40
 export const MAX_GUITAR_MIDI = parseNote("E6").midi; // 88
+
+// ---------------------------------------------------------------------------
+// Tab positions
+// ---------------------------------------------------------------------------
+
+export interface TabPosition {
+  /** String number 1 (high E) – 6 (low E). */
+  string: number;
+  /** Fret number, 0 = open. */
+  fret: number;
+}
+
+const OPEN_MIDIS = STANDARD_TUNING.map((s) => ({
+  string: s.number,
+  midi: parseNote(s.openNote).midi,
+}));
+
+/**
+ * A natural first-position tab spot for a note: the playable string with the
+ * lowest fret (ties go to the thinner string). Returns null when the note is
+ * below the instrument's range.
+ */
+export function noteToTab(midi: number): TabPosition | null {
+  let best: TabPosition | null = null;
+  for (const { string, midi: open } of OPEN_MIDIS) {
+    const fret = midi - open;
+    if (fret < 0 || fret > 12) continue;
+    if (
+      best === null ||
+      fret < best.fret ||
+      (fret === best.fret && string < best.string)
+    ) {
+      best = { string, fret };
+    }
+  }
+  return best;
+}

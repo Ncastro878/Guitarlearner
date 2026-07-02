@@ -9,6 +9,7 @@ import { NoteHunt } from "./game/NoteHunt";
 import { IntervalEcho } from "./game/IntervalEcho";
 import { Aurora } from "./game/Aurora";
 import { SongFlight } from "./game/SongFlight";
+import { CallResponse } from "./game/CallResponse";
 import { ComingSoon } from "./components/ComingSoon";
 
 export type Screen = "home" | GameModeId;
@@ -93,6 +94,18 @@ export default function App() {
             bestStreak={progress.intervalEcho.bestStreak}
             unlockedLevel={progress.intervalEcho.unlockedLevel}
             onRecord={(o) => recordResult("intervalEcho", o)}
+            onExit={goHome}
+          />
+        )}
+
+        {screen === "callResponse" && (
+          <CallResponse
+            pitch={pitchProps}
+            soundEffects={settings.soundEffects}
+            a4={settings.a4}
+            bestStreak={progress.callResponse?.bestStreak ?? 0}
+            unlockedLevel={progress.callResponse?.unlockedLevel ?? 0}
+            onRecord={(o) => recordResult("callResponse", o)}
             onExit={goHome}
           />
         )}

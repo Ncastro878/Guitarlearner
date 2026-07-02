@@ -10,12 +10,15 @@
  * (matched by pitch class), consistent with the other modes.
  */
 
-import { STANDARD_TUNING } from "../lib/guitar";
 import {
   mod12,
   parseNote,
   type PitchClass,
 } from "../lib/theory";
+
+// Tab mapping lives in lib/guitar (shared with the Fretboard component);
+// re-exported here for the engine and existing imports.
+export { noteToTab, type TabPosition } from "../lib/guitar";
 
 /** Seconds of runway before the first beat. */
 export const LEAD_IN_S = 3;
@@ -185,41 +188,4 @@ export function sweepMisses(
     else if (t - elapsedS > HIT_WINDOW_S) break;
   }
   return missed;
-}
-
-// ---------------------------------------------------------------------------
-// Tab display
-// ---------------------------------------------------------------------------
-
-export interface TabPosition {
-  /** String number 1 (high E) – 6 (low E). */
-  string: number;
-  /** Fret number, 0 = open. */
-  fret: number;
-}
-
-const OPEN_MIDIS = STANDARD_TUNING.map((s) => ({
-  string: s.number,
-  midi: parseNote(s.openNote).midi,
-}));
-
-/**
- * A natural first-position tab spot for a note: the playable string with the
- * lowest fret (ties go to the thinner string). Returns null when the note is
- * below the instrument's range.
- */
-export function noteToTab(midi: number): TabPosition | null {
-  let best: TabPosition | null = null;
-  for (const { string, midi: open } of OPEN_MIDIS) {
-    const fret = midi - open;
-    if (fret < 0 || fret > 12) continue;
-    if (
-      best === null ||
-      fret < best.fret ||
-      (fret === best.fret && string < best.string)
-    ) {
-      best = { string, fret };
-    }
-  }
-  return best;
 }
