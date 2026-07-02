@@ -105,6 +105,7 @@ rest are stubbed as "coming soon".
 | **🎵 Interval Echo** | ✅ Playable | Plays a root note through the speakers, asks you to play a named interval above it. Levels progress: 3rds/4ths/5ths → 3rds & 6ths → 2nds, 7ths & tritone → full chromatic speed round. The clock only starts after the root finishes ringing, and the root can be replayed any time. |
 | **🎸 Arpeggio Gauntlet** | 🚧 Coming soon | Shows a chord symbol; play every chord tone in any order. |
 | **🏃 Scale Runner** | 🚧 Coming soon | Run a scale ascending — one wrong note resets the streak. |
+| **👂 Call & Response** | ✅ Playable | The app plays a short phrase through the speakers; echo it back note by note (first note's name shown as an anchor, the rest is your ear). Levels grow the phrase: 2 notes → 3 → 4 → 4 with wide leaps. Misses reveal the phrase on a fretboard diagram. |
 | **🐦 Fret Bird** | ✅ Playable | Flappy-bird-meets-Guitar-Hero: a song's melody scrolls in as pipe gates labelled with the note to play (note names or a mini tab stave — toggleable). Play each note as its gap reaches the bird to flap through; unplayed gates are misses. Songs unlock in difficulty order: Mary Had a Little Lamb → Twinkle Twinkle → Ode to Joy → Happy Birthday. |
 | **✨ Aurora** | ✅ Playable | A free-play visualizer, not a drill: pick a key, and a canvas of polyrhythmic orbit rings (one per scale degree, revolving at 3:4:5:… rpm) reacts to what you play. In-key notes erupt colour bursts from their ring and build "flow" that makes the scene bloom; out-of-key notes glitch it — screen shake, red wash, shards. No timer, no fail state. |
 
@@ -141,6 +142,7 @@ src/
     Home.tsx           # mode select + mic gate + settings
     SettingsPanel.tsx  # settings modal
     GameShell.tsx      # shared in-game layout (header + tuner)
+    Fretboard.tsx      # reusable SVG neck diagram with position highlights
     ComingSoon.tsx     # placeholder for modes 3–4
   game/
     noteHunt.ts        # pure level defs & target logic (+ noteHunt.test.ts)
@@ -153,6 +155,8 @@ src/
     songFlight.ts      # pure song data, timing & judging (+ songFlight.test.ts)
     songFlightEngine.ts # framework-free canvas renderer (pipes, bird)
     SongFlight.tsx     # Fret Bird song mode
+    callResponse.ts    # pure phrase generation & matching (+ callResponse.test.ts)
+    CallResponse.tsx   # Call & Response ear-training mode
   App.tsx              # screen router + shared pitch engine wiring
   main.tsx
 ```

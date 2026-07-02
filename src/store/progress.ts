@@ -14,7 +14,8 @@ export type GameModeId =
   | "arpeggioGauntlet"
   | "scaleRunner"
   | "aurora"
-  | "songFlight";
+  | "songFlight"
+  | "callResponse";
 
 export interface ModeProgress {
   /** Highest level index the player has unlocked (0-based). */
@@ -40,6 +41,7 @@ export const DEFAULT_PROGRESS: Progress = {
   scaleRunner: { ...EMPTY_MODE },
   aurora: { ...EMPTY_MODE },
   songFlight: { ...EMPTY_MODE },
+  callResponse: { ...EMPTY_MODE },
 };
 
 export function useProgress() {

@@ -34,6 +34,13 @@ const MODES: ModeCard[] = [
     ready: true,
   },
   {
+    id: "callResponse",
+    title: "Call & Response",
+    emoji: "👂",
+    blurb: "Hear a short phrase, echo it back by ear.",
+    ready: true,
+  },
+  {
     id: "songFlight",
     title: "Fret Bird",
     emoji: "🐦",
