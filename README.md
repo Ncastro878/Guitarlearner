@@ -1,0 +1,166 @@
+# 🎸 Fretboard Trainer
+
+A browser-based guitar learning game that **listens to your real guitar through
+the microphone** and uses pitch detection to verify the notes you play. No
+backend, no accounts, no data leaves your device — the whole thing is a static
+site you can host anywhere.
+
+Built with **Vite + React + TypeScript**, **Tailwind CSS**, the **Web Audio
+API**, and the **[`pitchy`](https://www.npmjs.com/package/pitchy)** pitch
+detector.
+
+---
+
+## Quick start (local dev)
+
+```bash
+npm install
+npm run dev      # start the dev server (http://localhost:5173)
+```
+
+Other scripts:
+
+```bash
+npm run build      # type-check + production build → dist/
+npm run preview    # serve the production build locally
+npm run test       # run the unit tests once (Vitest)
+npm run test:watch # watch mode
+npm run typecheck  # type-check only
+```
+
+> **Microphone note:** browsers only allow microphone access over `https://`
+> (or `http://localhost`). The dev server and any HTTPS host both satisfy this.
+> Access is requested on a button click — never automatically.
+
+---
+
+## How the pitch detection works (high level)
+
+The core lives in [`src/hooks/usePitchDetection.ts`](src/hooks/usePitchDetection.ts).
+
+1. **Mic access** is requested on a user gesture via `getUserMedia`
+   (echo-cancellation / noise-suppression / auto-gain are turned **off** — they
+   distort the pitch of a sustained string).
+2. Audio is routed into a Web Audio **`AnalyserNode`** with a large FFT buffer
+   (**4096 samples** by default) so the low E string (~82 Hz) has enough
+   resolution.
+3. On every animation frame (~30–60 Hz) we pull the raw **time-domain** samples
+   (`getFloatTimeDomainData`) and run them through `pitchy`'s
+   `PitchDetector`, which implements the **McLeod Pitch Method (MPM)** — a
+   robust monophonic (single-note) detector. It returns a fundamental
+   frequency plus a **clarity** score (0–1).
+4. The frequency is converted to the **nearest note, octave and cents offset**
+   (see the theory library below), and gated:
+   - Signals outside the trusted guitar range (~70 Hz – 1400 Hz) are ignored.
+   - A **clarity + volume threshold** (driven by the sensitivity setting)
+     rejects noise and quiet plucks.
+   - A **~150 ms debounce** means a note only "registers" once it's been held
+     stably — guitar attack transients are noisy and would otherwise fire
+     spurious detections.
+5. The hook exposes two views of the signal:
+   - **Live values** (`currentNote`, `frequency`, `centsOffset`, `clarity`) —
+     updated every frame, powering the always-on **tuner strip**.
+   - **`stableNote`** + an `onStableNote` callback — the debounced note the game
+     logic reacts to.
+
+The tuner strip is intentionally always visible: it shows exactly what the mic
+heard, which builds player trust and makes debugging obvious. To test it, play
+a note on a guitar (or an online tone generator) and watch the note name and
+cents needle track it.
+
+> **Why MPM / `pitchy` instead of a hand-rolled YIN?** MPM (a close cousin of
+> YIN) handles the strong overtones and octave ambiguity of a plucked string
+> more reliably out of the box, and `pitchy` is small, dependency-free and
+> well-tested. The detection pipeline is isolated in one hook, so swapping in a
+> custom YIN implementation later is a one-file change.
+
+---
+
+## Music theory library
+
+[`src/lib/theory.ts`](src/lib/theory.ts) is a **pure, dependency-free,
+framework-agnostic** module (no DOM, no React) so it's trivially testable and
+reusable. It covers:
+
+- **Note ↔ MIDI ↔ frequency** conversion, with a configurable A4 reference and
+  cents offsets.
+- **Interval math** — semitone distances and interval names (both directions).
+- **Chord spelling** — maj, min, dom7, maj7, m7, dim, aug.
+- **Scale generation** — major, natural/harmonic minor, and major/minor
+  pentatonics.
+
+Its unit tests are in [`src/lib/theory.test.ts`](src/lib/theory.test.ts)
+(run with `npm test`).
+
+---
+
+## Game modes
+
+The app is architected for four modes; the MVP ships mode 1 end-to-end and
+stubs the rest as "coming soon".
+
+| Mode | Status | What it does |
+| --- | --- | --- |
+| **🎯 Note Hunt** | ✅ Playable | Prompts you to find a named note anywhere on the neck against a timer. Levels progress: naturals → sharps/flats → string-specific → speed round. Correct note = point + streak; a timeout resets the streak. |
+| **🎵 Interval Echo** | 🚧 Coming soon | Plays a root note, asks you to play a named interval above it. |
+| **🎸 Arpeggio Gauntlet** | 🚧 Coming soon | Shows a chord symbol; play every chord tone in any order. |
+| **🏃 Scale Runner** | 🚧 Coming soon | Run a scale ascending — one wrong note resets the streak. |
+
+Notes are matched by **pitch class** (any octave / string / position), so
+"Play a C#" is satisfied by any C# on the instrument. String-specific levels
+display a target string but only check the pitch — the string is on the honor
+system, since pitch alone can't distinguish which string produced a note.
+
+Progress (level unlocks, best streaks, lifetime correct counts) and settings
+(A4 reference, input sensitivity, sound effects, sharp/flat spelling) are
+persisted in **`localStorage`**.
+
+---
+
+## Project structure
+
+```
+src/
+  lib/
+    theory.ts          # pure music-theory library (+ theory.test.ts)
+    guitar.ts          # standard tuning & trusted pitch range
+    tones.ts           # tiny Web Audio synth for feedback / reference tones
+  hooks/
+    usePitchDetection.ts  # the core audio engine
+  store/
+    storage.ts         # defensive localStorage helpers
+    settings.ts        # persisted settings (A4, sensitivity, …)
+    progress.ts        # persisted per-mode unlocks & streaks
+  components/
+    TunerStrip.tsx     # always-on "what the mic heard" readout
+    Home.tsx           # mode select + mic gate + settings
+    SettingsPanel.tsx  # settings modal
+    GameShell.tsx      # shared in-game layout (header + tuner)
+    ComingSoon.tsx     # placeholder for modes 2–4
+  game/
+    noteHunt.ts        # pure level defs & target logic (+ noteHunt.test.ts)
+    NoteHunt.tsx       # Note Hunt game mode
+  App.tsx              # screen router + shared pitch engine wiring
+  main.tsx
+```
+
+---
+
+## Deploying to Vercel (one step)
+
+This is a fully client-side static app, so no configuration is needed:
+
+1. Push the repo to GitHub.
+2. In Vercel, **New Project → import the repo**. Vercel auto-detects Vite and
+   uses **Build Command `npm run build`** and **Output Directory `dist`**.
+3. Deploy. That's it — free tier, no backend, no environment variables.
+
+(The same `dist/` folder works on Netlify, GitHub Pages, Cloudflare Pages, or
+any static host.)
+
+---
+
+## Privacy
+
+Audio is analysed **entirely in your browser**. Nothing is recorded, stored, or
+sent anywhere. There is no server.
