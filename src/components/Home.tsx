@@ -34,6 +34,13 @@ const MODES: ModeCard[] = [
     ready: true,
   },
   {
+    id: "songFlight",
+    title: "Fret Bird",
+    emoji: "🐦",
+    blurb: "Flappy-style: play each song note as its gate reaches the bird.",
+    ready: true,
+  },
+  {
     id: "aurora",
     title: "Aurora",
     emoji: "✨",
