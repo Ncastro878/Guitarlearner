@@ -34,6 +34,13 @@ const MODES: ModeCard[] = [
     ready: true,
   },
   {
+    id: "aurora",
+    title: "Aurora",
+    emoji: "✨",
+    blurb: "Free play — light up the sky. Stay in key to keep it beautiful.",
+    ready: true,
+  },
+  {
     id: "arpeggioGauntlet",
     title: "Arpeggio Gauntlet",
     emoji: "🎸",

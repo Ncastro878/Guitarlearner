@@ -7,6 +7,7 @@ import type { DetectedNote } from "./lib/theory";
 import { Home } from "./components/Home";
 import { NoteHunt } from "./game/NoteHunt";
 import { IntervalEcho } from "./game/IntervalEcho";
+import { Aurora } from "./game/Aurora";
 import { ComingSoon } from "./components/ComingSoon";
 
 export type Screen = "home" | GameModeId;
@@ -91,6 +92,15 @@ export default function App() {
             bestStreak={progress.intervalEcho.bestStreak}
             unlockedLevel={progress.intervalEcho.unlockedLevel}
             onRecord={(o) => recordResult("intervalEcho", o)}
+            onExit={goHome}
+          />
+        )}
+
+        {screen === "aurora" && (
+          <Aurora
+            pitch={pitchProps}
+            bestStreak={progress.aurora?.bestStreak ?? 0}
+            onRecord={(o) => recordResult("aurora", o)}
             onExit={goHome}
           />
         )}

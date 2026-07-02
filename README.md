@@ -105,6 +105,7 @@ rest are stubbed as "coming soon".
 | **🎵 Interval Echo** | ✅ Playable | Plays a root note through the speakers, asks you to play a named interval above it. Levels progress: 3rds/4ths/5ths → 3rds & 6ths → 2nds, 7ths & tritone → full chromatic speed round. The clock only starts after the root finishes ringing, and the root can be replayed any time. |
 | **🎸 Arpeggio Gauntlet** | 🚧 Coming soon | Shows a chord symbol; play every chord tone in any order. |
 | **🏃 Scale Runner** | 🚧 Coming soon | Run a scale ascending — one wrong note resets the streak. |
+| **✨ Aurora** | ✅ Playable | A free-play visualizer, not a drill: pick a key, and a canvas of polyrhythmic orbit rings (one per scale degree, revolving at 3:4:5:… rpm) reacts to what you play. In-key notes erupt colour bursts from their ring and build "flow" that makes the scene bloom; out-of-key notes glitch it — screen shake, red wash, shards. No timer, no fail state. |
 
 Notes are matched by **pitch class** (any octave / string / position), so
 "Play a C#" is satisfied by any C# on the instrument. String-specific levels
@@ -145,6 +146,9 @@ src/
     NoteHunt.tsx       # Note Hunt game mode
     intervalEcho.ts    # pure level defs & target logic (+ intervalEcho.test.ts)
     IntervalEcho.tsx   # Interval Echo game mode
+    aurora.ts          # pure key/degree/ring logic (+ aurora.test.ts)
+    auroraEngine.ts    # framework-free canvas renderer (particles, orbits)
+    Aurora.tsx         # Aurora free-play visualizer
   App.tsx              # screen router + shared pitch engine wiring
   main.tsx
 ```

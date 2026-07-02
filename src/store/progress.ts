@@ -12,7 +12,8 @@ export type GameModeId =
   | "noteHunt"
   | "intervalEcho"
   | "arpeggioGauntlet"
-  | "scaleRunner";
+  | "scaleRunner"
+  | "aurora";
 
 export interface ModeProgress {
   /** Highest level index the player has unlocked (0-based). */
@@ -36,6 +37,7 @@ export const DEFAULT_PROGRESS: Progress = {
   intervalEcho: { ...EMPTY_MODE },
   arpeggioGauntlet: { ...EMPTY_MODE },
   scaleRunner: { ...EMPTY_MODE },
+  aurora: { ...EMPTY_MODE },
 };
 
 export function useProgress() {

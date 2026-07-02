@@ -3,10 +3,11 @@
  * implemented (Arpeggio Gauntlet, Scale Runner).
  */
 
-import type { GameModeId } from "../store/progress";
+/** The modes that still show the placeholder. */
+export type ComingSoonMode = "arpeggioGauntlet" | "scaleRunner";
 
 const MODE_INFO: Record<
-  Exclude<GameModeId, "noteHunt" | "intervalEcho">,
+  ComingSoonMode,
   { title: string; blurb: string; emoji: string }
 > = {
   arpeggioGauntlet: {
@@ -27,7 +28,7 @@ export function ComingSoon({
   mode,
   onExit,
 }: {
-  mode: Exclude<GameModeId, "noteHunt" | "intervalEcho">;
+  mode: ComingSoonMode;
   onExit: () => void;
 }) {
   const info = MODE_INFO[mode];
