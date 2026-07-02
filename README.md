@@ -96,20 +96,23 @@ Its unit tests are in [`src/lib/theory.test.ts`](src/lib/theory.test.ts)
 
 ## Game modes
 
-The app is architected for four modes; the MVP ships mode 1 end-to-end and
-stubs the rest as "coming soon".
+The app is architected for four modes; the first two ship end-to-end and the
+rest are stubbed as "coming soon".
 
 | Mode | Status | What it does |
 | --- | --- | --- |
 | **🎯 Note Hunt** | ✅ Playable | Prompts you to find a named note anywhere on the neck against a timer. Levels progress: naturals → sharps/flats → string-specific → speed round. Correct note = point + streak; a timeout resets the streak. |
-| **🎵 Interval Echo** | 🚧 Coming soon | Plays a root note, asks you to play a named interval above it. |
+| **🎵 Interval Echo** | ✅ Playable | Plays a root note through the speakers, asks you to play a named interval above it. Levels progress: 3rds/4ths/5ths → 3rds & 6ths → 2nds, 7ths & tritone → full chromatic speed round. The clock only starts after the root finishes ringing, and the root can be replayed any time. |
 | **🎸 Arpeggio Gauntlet** | 🚧 Coming soon | Shows a chord symbol; play every chord tone in any order. |
 | **🏃 Scale Runner** | 🚧 Coming soon | Run a scale ascending — one wrong note resets the streak. |
 
 Notes are matched by **pitch class** (any octave / string / position), so
 "Play a C#" is satisfied by any C# on the instrument. String-specific levels
 display a target string but only check the pitch — the string is on the honor
-system, since pitch alone can't distinguish which string produced a note.
+system, since pitch alone can't distinguish which string produced a note. The
+same applies to interval direction in Interval Echo: "a 5th above A" is checked
+by pitch class (E), so an E below the root also counts. Wrong notes in Interval
+Echo show which interval you actually played — a free ear-training hint.
 
 Progress (level unlocks, best streaks, lifetime correct counts) and settings
 (A4 reference, input sensitivity, sound effects, sharp/flat spelling) are
@@ -136,10 +139,12 @@ src/
     Home.tsx           # mode select + mic gate + settings
     SettingsPanel.tsx  # settings modal
     GameShell.tsx      # shared in-game layout (header + tuner)
-    ComingSoon.tsx     # placeholder for modes 2–4
+    ComingSoon.tsx     # placeholder for modes 3–4
   game/
     noteHunt.ts        # pure level defs & target logic (+ noteHunt.test.ts)
     NoteHunt.tsx       # Note Hunt game mode
+    intervalEcho.ts    # pure level defs & target logic (+ intervalEcho.test.ts)
+    IntervalEcho.tsx   # Interval Echo game mode
   App.tsx              # screen router + shared pitch engine wiring
   main.tsx
 ```
