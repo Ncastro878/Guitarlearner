@@ -12,6 +12,12 @@ import type { TabPosition } from "../lib/guitar";
 
 export interface FretboardHighlight extends TabPosition {
   label?: string;
+  /** Circle fill (default emerald). */
+  color?: string;
+  /** Circle outline (default dark emerald). */
+  stroke?: string;
+  /** Label text colour (default near-black, readable on light fills). */
+  labelColor?: string;
 }
 
 interface FretboardProps {
@@ -113,8 +119,8 @@ export function Fretboard({ highlights, minFrets = 5 }: FretboardProps) {
             cx={spotX(h.fret)}
             cy={stringY(h.string)}
             r={8.5}
-            fill="#10b981"
-            stroke="#065f46"
+            fill={h.color ?? "#10b981"}
+            stroke={h.stroke ?? "#065f46"}
             strokeWidth={1.5}
           />
           {h.label && (
@@ -124,7 +130,7 @@ export function Fretboard({ highlights, minFrets = 5 }: FretboardProps) {
               textAnchor="middle"
               fontSize={10}
               fontWeight={700}
-              fill="#022c22"
+              fill={h.labelColor ?? "#022c22"}
             >
               {h.label}
             </text>

@@ -34,6 +34,13 @@ const MODES: ModeCard[] = [
     ready: true,
   },
   {
+    id: "fretQuiz",
+    title: "Fret Quiz",
+    emoji: "🧠",
+    blurb: "A fret lights up — name the note. No guitar or mic needed.",
+    ready: true,
+  },
+  {
     id: "callResponse",
     title: "Call & Response",
     emoji: "👂",

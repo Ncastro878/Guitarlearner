@@ -10,6 +10,7 @@ import { IntervalEcho } from "./game/IntervalEcho";
 import { Aurora } from "./game/Aurora";
 import { SongFlight } from "./game/SongFlight";
 import { CallResponse } from "./game/CallResponse";
+import { FretQuiz } from "./game/FretQuiz";
 import { ComingSoon } from "./components/ComingSoon";
 
 export type Screen = "home" | GameModeId;
@@ -94,6 +95,17 @@ export default function App() {
             bestStreak={progress.intervalEcho.bestStreak}
             unlockedLevel={progress.intervalEcho.unlockedLevel}
             onRecord={(o) => recordResult("intervalEcho", o)}
+            onExit={goHome}
+          />
+        )}
+
+        {screen === "fretQuiz" && (
+          <FretQuiz
+            useFlats={settings.useFlats}
+            soundEffects={settings.soundEffects}
+            bestStreak={progress.fretQuiz?.bestStreak ?? 0}
+            unlockedLevel={progress.fretQuiz?.unlockedLevel ?? 0}
+            onRecord={(o) => recordResult("fretQuiz", o)}
             onExit={goHome}
           />
         )}
