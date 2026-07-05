@@ -16,11 +16,15 @@ import { Fretboard } from "../components/Fretboard";
 import { STANDARD_TUNING } from "../lib/guitar";
 import { mod12, parseNote, pitchClassName, type PitchClass } from "../lib/theory";
 import { playError, playSuccess } from "../lib/tones";
+import { useFretQuizMemory } from "../store/fretQuizMemory";
 import {
   FRET_QUIZ_LEVELS,
+  cardId,
   isCorrectAnswer,
-  nextQuestion,
+  levelMastery,
+  nextQuestionWeighted,
   type FretQuizLevel,
+  type FretQuizMemory,
   type FretQuizQuestion,
 } from "./fretQuiz";
 
@@ -72,6 +76,16 @@ export function FretQuiz({
 
   const level: FretQuizLevel = FRET_QUIZ_LEVELS[levelIdx];
 
+  // Spaced-repetition memory: every position is a Leitner card; misses drop
+  // it to box 0 (asked often), correct answers promote it (asked rarely).
+  const { memory, record, reset: resetMemory } = useFretQuizMemory();
+  const memoryRef = useRef(memory);
+  memoryRef.current = memory;
+  const recordRef = useRef(record);
+  recordRef.current = record;
+  /** Card ids of the last few questions, damped to avoid ping-ponging. */
+  const recentRef = useRef<string[]>([]);
+
   // Refs the async callbacks/timers read so they never see stale values.
   const acceptingRef = useRef(false);
   const questionRef = useRef<FretQuizQuestion | null>(null);
@@ -108,8 +122,14 @@ export function FretQuiz({
   const beginRound = useCallback(
     (roundIndex: number) => {
       const lvl = FRET_QUIZ_LEVELS[levelIdxRef.current];
-      const q = nextQuestion(lvl, questionRef.current);
+      const q = nextQuestionWeighted(
+        lvl,
+        memoryRef.current,
+        questionRef.current,
+        recentRef.current,
+      );
       questionRef.current = q;
+      recentRef.current = [cardId(q), ...recentRef.current].slice(0, 3);
       roundRef.current = roundIndex;
 
       setQuestion(q);
@@ -156,6 +176,10 @@ export function FretQuiz({
       if (timerRef.current) clearInterval(timerRef.current);
       clearStaged();
       setAnswered(mod12(pc));
+      recordRef.current(
+        questionRef.current,
+        isCorrectAnswer(questionRef.current, pc),
+      );
 
       if (isCorrectAnswer(questionRef.current, pc)) {
         const ns = streakRef.current + 1;
@@ -187,6 +211,7 @@ export function FretQuiz({
     if (timerRef.current) clearInterval(timerRef.current);
     clearStaged();
     setAnswered(null);
+    if (questionRef.current) recordRef.current(questionRef.current, false);
     streakRef.current = 0;
     setStreak(0);
     setFeedback("miss");
@@ -288,8 +313,13 @@ export function FretQuiz({
             note or type A–G (add # or b). No guitar or mic needed. Clear ~60%
             to unlock the next level.
           </p>
+          <p className="text-xs text-slate-500">
+            The quiz remembers every position: ones you miss come back much
+            more often, ones you nail fade away.
+          </p>
           {FRET_QUIZ_LEVELS.map((lvl, idx) => {
             const locked = idx > unlockedLevel;
+            const mastery = levelMastery(lvl, memory);
             return (
               <button
                 key={lvl.id}
@@ -301,7 +331,7 @@ export function FretQuiz({
                     : "border-slate-700/60 bg-slate-900/60 hover:border-emerald-500/60 hover:bg-slate-800/60"
                 }`}
               >
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-slate-500">
                       L{idx + 1}
@@ -312,6 +342,21 @@ export function FretQuiz({
                   <p className="mt-0.5 text-xs text-slate-400">
                     {lvl.description}
                   </p>
+                  {!locked && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-1 w-24 overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-emerald-500/80"
+                          style={{
+                            width: `${(mastery.solid / Math.max(1, mastery.total)) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500">
+                        {mastery.solid}/{mastery.total} solid
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="ml-3 shrink-0 text-right text-[10px] text-slate-500">
                   {lvl.rounds} frets
@@ -321,6 +366,12 @@ export function FretQuiz({
               </button>
             );
           })}
+          <button
+            onClick={resetMemory}
+            className="mt-1 self-center rounded-lg px-3 py-2 text-xs text-slate-600 transition hover:text-slate-400"
+          >
+            Reset drill memory
+          </button>
         </main>
       </div>
     );
@@ -441,6 +492,11 @@ export function FretQuiz({
                 </span>{" "}
                 string ·{" "}
                 {question.fret === 0 ? "open" : `fret ${question.fret}`}
+                {isGap(memory, question) && (
+                  <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                    🎯 drilling a gap
+                  </span>
+                )}
               </>
             )}
           </p>
@@ -486,6 +542,12 @@ export function FretQuiz({
       </main>
     </div>
   );
+}
+
+/** A position the player has attempted before and is still on box 0. */
+function isGap(memory: FretQuizMemory, q: FretQuizQuestion): boolean {
+  const stats = memory[cardId(q)];
+  return !!stats && stats.box === 0 && stats.attempts > 0;
 }
 
 function Header({
