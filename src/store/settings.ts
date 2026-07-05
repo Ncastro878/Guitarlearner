@@ -21,6 +21,12 @@ export interface Settings {
   soundEffects: boolean;
   /** Prefer flat spellings in the UI. */
   useFlats: boolean;
+  /**
+   * How far off (in cents) a played note may be and still count, 50–100.
+   * 50 = only the nearest note; raise it if your strings drift out of tune
+   * or the intonation up the neck isn't perfect.
+   */
+  toleranceCents: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -28,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sensitivity: 55,
   soundEffects: true,
   useFlats: false,
+  toleranceCents: 50,
 };
 
 /**

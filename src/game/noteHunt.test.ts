@@ -49,9 +49,20 @@ describe("nextTarget", () => {
 });
 
 describe("isCorrectGuess", () => {
+  const target = { pitchClass: 1, stringNumber: null, stringLabel: null };
+
   it("matches by pitch class, ignoring octave", () => {
-    const target = { pitchClass: 1, stringNumber: null, stringLabel: null };
-    expect(isCorrectGuess(target, 1)).toBe(true);
-    expect(isCorrectGuess(target, 2)).toBe(false);
+    expect(isCorrectGuess(target, { midi: 61, cents: 0 })).toBe(true); // C#4
+    expect(isCorrectGuess(target, { midi: 73, cents: 0 })).toBe(true); // C#5
+    expect(isCorrectGuess(target, { midi: 62, cents: 0 })).toBe(false); // D4
+  });
+
+  it("forgives out-of-tune notes within the tolerance", () => {
+    // 40 cents flat of D4 is 60 cents from C#4.
+    const flatD = { midi: 62, cents: -40 };
+    expect(isCorrectGuess(target, flatD)).toBe(false); // default ±50
+    expect(isCorrectGuess(target, flatD, 75)).toBe(true); // loosened
+    // A cleanly played neighbouring fret (exactly 100 cents) never counts.
+    expect(isCorrectGuess(target, { midi: 62, cents: 0 }, 100)).toBe(false);
   });
 });

@@ -70,20 +70,30 @@ describe("targetNote / targetIntervalName", () => {
 
 describe("isCorrectGuess", () => {
   const target = { root: parseNote("A2"), semitones: 7 }; // P5 above A2 = E
+  const r = (name: string, cents = 0) => ({
+    midi: parseNote(name).midi,
+    cents,
+  });
 
   it("accepts the exact target note", () => {
-    expect(isCorrectGuess(target, parseNote("E3").midi)).toBe(true);
+    expect(isCorrectGuess(target, r("E3"))).toBe(true);
   });
 
   it("accepts the right pitch class in any octave, even below the root", () => {
-    expect(isCorrectGuess(target, parseNote("E4").midi)).toBe(true);
-    expect(isCorrectGuess(target, parseNote("E2").midi)).toBe(true);
+    expect(isCorrectGuess(target, r("E4"))).toBe(true);
+    expect(isCorrectGuess(target, r("E2"))).toBe(true);
   });
 
   it("rejects wrong notes and the root itself", () => {
-    expect(isCorrectGuess(target, parseNote("D3").midi)).toBe(false);
-    expect(isCorrectGuess(target, parseNote("A2").midi)).toBe(false);
-    expect(isCorrectGuess(target, parseNote("A3").midi)).toBe(false);
+    expect(isCorrectGuess(target, r("D3"))).toBe(false);
+    expect(isCorrectGuess(target, r("A2"))).toBe(false);
+    expect(isCorrectGuess(target, r("A3"))).toBe(false);
+  });
+
+  it("forgives detuned strings within a widened tolerance", () => {
+    // 35 cents sharp of D#3 = 65 cents from E3.
+    expect(isCorrectGuess(target, r("D#3", 35))).toBe(false);
+    expect(isCorrectGuess(target, r("D#3", 35), 80)).toBe(true);
   });
 });
 

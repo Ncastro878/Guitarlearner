@@ -107,6 +107,7 @@ export function SongFlight({
       displayMode,
       pitch.useFlats,
       metronome,
+      pitch.toleranceCents,
       {
         onHit: () => {
           hitsRef.current += 1;

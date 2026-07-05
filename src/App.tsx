@@ -60,6 +60,7 @@ export default function App() {
     stop: pitch.stop,
     registerNoteHandler,
     useFlats: settings.useFlats,
+    toleranceCents: settings.toleranceCents,
   };
 
   return (
@@ -175,4 +176,6 @@ export interface PitchProps {
   stop: () => void;
   registerNoteHandler: (cb: ((n: DetectedNote) => void) | null) => void;
   useFlats: boolean;
+  /** How far off (cents) a played note may be and still count (settings). */
+  toleranceCents: number;
 }

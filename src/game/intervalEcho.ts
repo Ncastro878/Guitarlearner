@@ -12,10 +12,12 @@
 
 import {
   INTERVALS,
+  centsFromPitchClass,
   mod12,
   noteFromMidi,
   type IntervalName,
   type Note,
+  type PitchReading,
 } from "../lib/theory";
 
 export interface IntervalEchoLevel {
@@ -125,13 +127,15 @@ export function guessedInterval(
 }
 
 /**
- * A guess is correct if its pitch class sits `semitones` above the root's
- * pitch class (octave ignored). Since pools only contain 1–11, playing the
- * root back is never a correct answer.
+ * A guess is correct if it lands within `toleranceCents` of the pitch class
+ * `semitones` above the root (octave ignored). Since pools only contain
+ * 1–11, playing the root back is never a correct answer.
  */
 export function isCorrectGuess(
   target: IntervalEchoTarget,
-  guessMidi: number,
+  guess: PitchReading,
+  toleranceCents = 50,
 ): boolean {
-  return guessedInterval(target, guessMidi) === target.semitones;
+  const targetPc = mod12(target.root.pitchClass + target.semitones);
+  return centsFromPitchClass(guess, targetPc) < toleranceCents;
 }

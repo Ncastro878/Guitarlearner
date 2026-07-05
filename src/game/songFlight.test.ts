@@ -69,34 +69,40 @@ describe("timing", () => {
 });
 
 describe("judgeNote", () => {
-  it("hits the nearest pending note when the pitch class matches", () => {
+  const r = (name: string, cents = 0) => ({
+    midi: parseNote(name).midi,
+    cents,
+  });
+
+  it("hits the nearest pending note when the pitch matches", () => {
     const song = SONGS[0];
     const states = freshStates(0);
     const t0 = noteTimeS(song, 0);
-    const j = judgeNote(song, states, t0 + 0.1, parseNote("E4").pitchClass);
+    const j = judgeNote(song, states, t0 + 0.1, r("E4"));
     expect(j).toEqual({ kind: "hit", index: 0 });
   });
 
   it("accepts any octave of the target", () => {
     const song = SONGS[0];
-    const j = judgeNote(
-      song,
-      freshStates(0),
-      noteTimeS(song, 0),
-      parseNote("E2").pitchClass,
-    );
+    const j = judgeNote(song, freshStates(0), noteTimeS(song, 0), r("E2"));
     expect(j.kind).toBe("hit");
   });
 
   it("flags a wrong pitch against the note in the window", () => {
     const song = SONGS[0];
-    const j = judgeNote(
-      song,
-      freshStates(0),
-      noteTimeS(song, 0),
-      parseNote("F4").pitchClass,
-    );
+    const j = judgeNote(song, freshStates(0), noteTimeS(song, 0), r("F4"));
     expect(j).toEqual({ kind: "wrong", index: 0 });
+  });
+
+  it("forgives detuned notes within a widened tolerance", () => {
+    const song = SONGS[0]; // first note E4
+    const detuned = r("D#4", 40); // 60 cents from E4
+    expect(
+      judgeNote(song, freshStates(0), noteTimeS(song, 0), detuned).kind,
+    ).toBe("wrong");
+    expect(
+      judgeNote(song, freshStates(0), noteTimeS(song, 0), detuned, 75).kind,
+    ).toBe("hit");
   });
 
   it("ignores playing when no note is in the window", () => {
@@ -105,7 +111,7 @@ describe("judgeNote", () => {
       song,
       freshStates(0),
       noteTimeS(song, 0) - HIT_WINDOW_S - 0.2,
-      parseNote("E4").pitchClass,
+      r("E4"),
     );
     expect(j).toEqual({ kind: "none" });
   });
@@ -114,12 +120,7 @@ describe("judgeNote", () => {
     const song = SONGS[0]; // notes 4,5,6 are all E4
     const states = freshStates(0);
     states[4] = "hit";
-    const j = judgeNote(
-      song,
-      states,
-      noteTimeS(song, 5),
-      parseNote("E4").pitchClass,
-    );
+    const j = judgeNote(song, states, noteTimeS(song, 5), r("E4"));
     expect(j).toEqual({ kind: "hit", index: 5 });
   });
 });

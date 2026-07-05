@@ -18,7 +18,14 @@
 
 import { STANDARD_TUNING } from "../lib/guitar";
 import { pickWeighted, type SrsMemory } from "../lib/srs";
-import { mod12, parseNote, type PitchClass } from "../lib/theory";
+import {
+  centsFromMidi,
+  centsFromPitchClass,
+  mod12,
+  parseNote,
+  type PitchClass,
+  type PitchReading,
+} from "../lib/theory";
 
 /** Pitch classes of the seven natural notes. */
 const NATURALS: PitchClass[] = [0, 2, 4, 5, 7, 9, 11];
@@ -126,15 +133,21 @@ export function nextFinderQuestion(
 export type FinderJudgement = "hit" | "wrongOctave" | "wrong";
 
 /**
- * Judge a detected note against the question. The octave check is what
- * enforces the zone: the right pitch class at a MIDI note the zone can't
- * produce means the player found the note somewhere else on the neck.
+ * Judge a detected note against the question, within the pitch tolerance.
+ * The octave check is what enforces the zone: the right pitch class at a
+ * MIDI note the zone can't produce means the player found the note
+ * somewhere else on the neck.
  */
 export function judgeFinderNote(
   question: FinderQuestion,
-  midi: number,
+  guess: PitchReading,
+  toleranceCents = 50,
 ): FinderJudgement {
-  if (question.validMidis.includes(midi)) return "hit";
-  if (mod12(midi) === question.pc) return "wrongOctave";
+  const nearest = Math.min(
+    ...question.validMidis.map((m) => centsFromMidi(guess, m)),
+  );
+  if (nearest < toleranceCents) return "hit";
+  if (centsFromPitchClass(guess, question.pc) < toleranceCents)
+    return "wrongOctave";
   return "wrong";
 }

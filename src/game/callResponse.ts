@@ -9,7 +9,11 @@
  * identical note would be unreliable to detect.
  */
 
-import { mod12, type PitchClass } from "../lib/theory";
+import {
+  centsFromPitchClass,
+  mod12,
+  type PitchReading,
+} from "../lib/theory";
 
 export interface CallResponseLevel {
   id: number;
@@ -99,15 +103,19 @@ export function generatePhrase(
 }
 
 /**
- * Whether a played pitch class matches the phrase note at `index`
- * (octave ignored, consistent with the other modes).
+ * Whether a played note matches the phrase note at `index` within the pitch
+ * tolerance (octave ignored, consistent with the other modes).
  */
 export function matchesAt(
   phrase: number[],
   index: number,
-  pc: PitchClass,
+  guess: PitchReading,
+  toleranceCents = 50,
 ): boolean {
-  return index < phrase.length && mod12(phrase[index]) === mod12(pc);
+  return (
+    index < phrase.length &&
+    centsFromPitchClass(guess, mod12(phrase[index])) < toleranceCents
+  );
 }
 
 /** Seconds between phrase-note onsets during playback. */

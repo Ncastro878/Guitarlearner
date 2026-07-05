@@ -11,9 +11,10 @@
  */
 
 import {
+  centsFromPitchClass,
   mod12,
   parseNote,
-  type PitchClass,
+  type PitchReading,
 } from "../lib/theory";
 
 // Tab mapping lives in lib/guitar (shared with the Fretboard component);
@@ -153,16 +154,17 @@ export type Judgement =
   | { kind: "none" };
 
 /**
- * Judge a played pitch class against the song at a moment in time. The
- * nearest pending note within the hit window is the candidate: matching
- * pitch class = hit, otherwise wrong. With no candidate the play is ignored
+ * Judge a played note against the song at a moment in time. The nearest
+ * pending note within the hit window is the candidate: within the pitch
+ * tolerance = hit, otherwise wrong. With no candidate the play is ignored
  * (noodling between notes is free, like the other modes).
  */
 export function judgeNote(
   song: Song,
   states: NoteState[],
   elapsedS: number,
-  pc: PitchClass,
+  guess: PitchReading,
+  toleranceCents = 50,
 ): Judgement {
   let best = -1;
   let bestDist = Infinity;
@@ -177,7 +179,9 @@ export function judgeNote(
     }
   }
   if (best === -1) return { kind: "none" };
-  if (mod12(song.notes[best].midi) === mod12(pc)) {
+  if (
+    centsFromPitchClass(guess, mod12(song.notes[best].midi)) < toleranceCents
+  ) {
     return { kind: "hit", index: best };
   }
   return { kind: "wrong", index: best };
