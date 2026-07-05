@@ -533,9 +533,9 @@ export function FretQuiz({
           )}
         </div>
 
-        {/* answer pad */}
+        {/* answer pad — alphabetical from A so there's no searching */}
         <div className="mt-2 grid grid-cols-6 gap-2">
-          {Array.from({ length: 12 }, (_, pc) => (
+          {Array.from({ length: 12 }, (_, i) => mod12(9 + i)).map((pc) => (
             <button
               key={pc}
               disabled={feedback !== "idle"}
