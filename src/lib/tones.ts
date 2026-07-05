@@ -77,6 +77,16 @@ export function playError(): void {
   playTone({ frequency: 174.61, duration: 0.28, type: "sawtooth", gain: 0.12 });
 }
 
+/** A short metronome click; accented beats are brighter and louder. */
+export function playTick(accent = false): void {
+  playTone({
+    frequency: accent ? 1800 : 1200,
+    duration: 0.045,
+    type: "square",
+    gain: accent ? 0.12 : 0.07,
+  });
+}
+
 /**
  * Play a reference pitch (used by Interval Echo and for ear-training hints).
  */

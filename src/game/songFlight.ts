@@ -20,8 +20,8 @@ import {
 // re-exported here for the engine and existing imports.
 export { noteToTab, type TabPosition } from "../lib/guitar";
 
-/** Seconds of runway before the first beat. */
-export const LEAD_IN_S = 3;
+/** Count-in length: the first note lands on beat 4, counted at song tempo. */
+export const LEAD_BEATS = 4;
 /** A note may be hit within ± this many seconds of its ideal time. */
 export const HIT_WINDOW_S = 0.45;
 /** Fraction of a song's notes you must hit to unlock the next song. */
@@ -40,7 +40,10 @@ export interface Song {
   id: number;
   title: string;
   difficulty: string;
+  /** Performance tempo — the scroll speed and count-in follow it. */
   bpm: number;
+  /** Beats per bar, for metronome accents (4 = common time, 3 = waltz). */
+  meter: number;
   notes: SongNote[];
 }
 
@@ -58,7 +61,8 @@ export const SONGS: Song[] = [
     id: 0,
     title: "Mary Had a Little Lamb",
     difficulty: "Easy",
-    bpm: 72,
+    bpm: 100,
+    meter: 4,
     notes: melody([
       ["E4", 0], ["D4", 1], ["C4", 2], ["D4", 3],
       ["E4", 4], ["E4", 5], ["E4", 6, 2],
@@ -74,7 +78,8 @@ export const SONGS: Song[] = [
     id: 1,
     title: "Twinkle Twinkle Little Star",
     difficulty: "Easy",
-    bpm: 76,
+    bpm: 90,
+    meter: 4,
     notes: melody([
       ["C4", 0], ["C4", 1], ["G4", 2], ["G4", 3],
       ["A4", 4], ["A4", 5], ["G4", 6, 2],
@@ -92,7 +97,8 @@ export const SONGS: Song[] = [
     id: 2,
     title: "Ode to Joy",
     difficulty: "Medium",
-    bpm: 84,
+    bpm: 104,
+    meter: 4,
     notes: melody([
       ["E4", 0], ["E4", 1], ["F4", 2], ["G4", 3],
       ["G4", 4], ["F4", 5], ["E4", 6], ["D4", 7],
@@ -108,7 +114,8 @@ export const SONGS: Song[] = [
     id: 3,
     title: "Happy Birthday",
     difficulty: "Hard",
-    bpm: 80,
+    bpm: 120,
+    meter: 3,
     notes: melody([
       ["C4", 0, 0.5], ["C4", 0.5, 0.5], ["D4", 1], ["C4", 2], ["F4", 3], ["E4", 4, 2],
       ["C4", 6, 0.5], ["C4", 6.5, 0.5], ["D4", 7], ["C4", 8], ["G4", 9], ["F4", 10, 2],
@@ -123,9 +130,14 @@ export function secondsPerBeat(song: Song): number {
   return 60 / song.bpm;
 }
 
+/** Seconds the count-in occupies at the song's tempo. */
+export function leadInS(song: Song): number {
+  return LEAD_BEATS * secondsPerBeat(song);
+}
+
 /** Ideal hit time (seconds from song start) of note i. */
 export function noteTimeS(song: Song, i: number): number {
-  return LEAD_IN_S + song.notes[i].beat * secondsPerBeat(song);
+  return leadInS(song) + song.notes[i].beat * secondsPerBeat(song);
 }
 
 /** When the run is over: last note's time plus a beat of tail. */

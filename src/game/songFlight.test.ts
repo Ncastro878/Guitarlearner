@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { parseNote } from "../lib/theory";
 import {
   HIT_WINDOW_S,
-  LEAD_IN_S,
+  LEAD_BEATS,
   SONGS,
   judgeNote,
+  leadInS,
   noteTimeS,
   noteToTab,
   secondsPerBeat,
@@ -42,13 +43,28 @@ describe("song catalogue", () => {
 });
 
 describe("timing", () => {
-  it("schedules notes at lead-in + beat × seconds-per-beat", () => {
+  it("schedules notes at the count-in + beat × seconds-per-beat", () => {
     const song = SONGS[0];
-    expect(noteTimeS(song, 0)).toBe(LEAD_IN_S);
-    expect(noteTimeS(song, 1)).toBeCloseTo(LEAD_IN_S + secondsPerBeat(song));
+    expect(leadInS(song)).toBeCloseTo(LEAD_BEATS * secondsPerBeat(song));
+    expect(noteTimeS(song, 0)).toBeCloseTo(leadInS(song));
+    expect(noteTimeS(song, 1)).toBeCloseTo(leadInS(song) + secondsPerBeat(song));
     expect(songEndS(song)).toBeGreaterThan(
       noteTimeS(song, song.notes.length - 1),
     );
+  });
+
+  it("counts in at the song's own tempo, so faster songs start sooner", () => {
+    const mary = SONGS[0]; // 100 bpm
+    const twinkle = SONGS[1]; // 90 bpm
+    expect(leadInS(mary)).toBeLessThan(leadInS(twinkle));
+  });
+
+  it("gives every song a performance tempo and a meter for accents", () => {
+    for (const song of SONGS) {
+      expect(song.bpm).toBeGreaterThanOrEqual(90);
+      expect([3, 4]).toContain(song.meter);
+    }
+    expect(SONGS[3].meter).toBe(3); // Happy Birthday is a waltz
   });
 });
 

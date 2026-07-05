@@ -15,12 +15,13 @@
  */
 
 import { pitchClassName, type DetectedNote } from "../lib/theory";
+import { playTick } from "../lib/tones";
 import {
-  HIT_WINDOW_S,
-  LEAD_IN_S,
+  LEAD_BEATS,
   judgeNote,
   noteTimeS,
   noteToTab,
+  secondsPerBeat,
   songEndS,
   sweepMisses,
   type NoteState,
@@ -60,6 +61,8 @@ export class SongFlightEngine {
   private cb: SongFlightCallbacks;
   private displayMode: SongDisplayMode;
   private useFlats: boolean;
+  private metronome: boolean;
+  private lastBeat = -1;
 
   private states: NoteState[];
   private sparks: Spark[] = [];
@@ -82,6 +85,7 @@ export class SongFlightEngine {
     song: Song,
     displayMode: SongDisplayMode,
     useFlats: boolean,
+    metronome: boolean,
     cb: SongFlightCallbacks,
   ) {
     this.canvas = canvas;
@@ -91,6 +95,7 @@ export class SongFlightEngine {
     this.song = song;
     this.displayMode = displayMode;
     this.useFlats = useFlats;
+    this.metronome = metronome;
     this.cb = cb;
     this.states = song.notes.map(() => "pending");
     this.resize();
@@ -98,6 +103,10 @@ export class SongFlightEngine {
 
   setDisplayMode(mode: SongDisplayMode): void {
     this.displayMode = mode;
+  }
+
+  setMetronome(on: boolean): void {
+    this.metronome = on;
   }
 
   resize(): void {
@@ -197,6 +206,23 @@ export class SongFlightEngine {
     this.lastT = t;
     const now = this.elapsed(t);
     this.wobblePhase += dt * 5;
+
+    // The pulse: tick every beat during the count-in (always) and through
+    // the song (when the metronome is on), accenting downbeats. This is what
+    // locks the player to the song's actual tempo.
+    if (!this.ended) {
+      const spb = secondsPerBeat(this.song);
+      const beat = Math.floor(now / spb);
+      if (beat !== this.lastBeat && now <= songEndS(this.song)) {
+        this.lastBeat = beat;
+        const songBeat = beat - LEAD_BEATS;
+        if (songBeat < 0) {
+          playTick(beat === 0); // count-in always ticks, first beat accented
+        } else if (this.metronome) {
+          playTick(songBeat % this.song.meter === 0);
+        }
+      }
+    }
 
     // Sweep misses and detect the end of the song.
     if (!this.ended) {
@@ -305,6 +331,17 @@ export class SongFlightEngine {
       const lx = x - PIPE_W / 2;
       const topH = gy - GAP_H / 2;
       const botY = gy + GAP_H / 2;
+
+      // Duration band: held notes ring past their gap, so half notes read
+      // longer than quarters and the song's rhythm is visible.
+      const durW = this.song.notes[i].dur * PX_PER_BEAT;
+      if (durW > PIPE_W) {
+        ctx.fillStyle =
+          state === "missed"
+            ? "rgba(244, 63, 94, 0.06)"
+            : "rgba(16, 185, 129, 0.08)";
+        ctx.fillRect(x, gy - GAP_H / 4, durW - PIPE_W / 2, GAP_H / 2);
+      }
 
       ctx.fillStyle = body;
       ctx.strokeStyle = edge;
@@ -473,14 +510,27 @@ export class SongFlightEngine {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Countdown before the first note.
-    const untilFirst = LEAD_IN_S - now;
-    if (untilFirst > -HIT_WINDOW_S && untilFirst > 0) {
+    // Count-in before the first note, in beats at the song's tempo (the
+    // first note lands right on the next downbeat).
+    const spb = secondsPerBeat(this.song);
+    const beatsNow = now / spb;
+    if (beatsNow < LEAD_BEATS) {
       ctx.font = "900 52px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "rgba(248, 250, 252, 0.85)";
-      ctx.fillText(String(Math.ceil(untilFirst)), this.width / 2, this.height * 0.38);
+      ctx.fillText(
+        String(Math.ceil(LEAD_BEATS - beatsNow)),
+        this.width / 2,
+        this.height * 0.38,
+      );
+      ctx.font = "600 12px system-ui, sans-serif";
+      ctx.fillStyle = "rgba(148, 163, 184, 0.8)";
+      ctx.fillText(
+        `${this.song.bpm} bpm`,
+        this.width / 2,
+        this.height * 0.38 + 40,
+      );
     }
   }
 }

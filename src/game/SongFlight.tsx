@@ -13,6 +13,7 @@ import type { PitchProps } from "../App";
 import { GameShell } from "../components/GameShell";
 import { pitchClassName, type DetectedNote } from "../lib/theory";
 import { playError, playSuccess } from "../lib/tones";
+import { loadJSON, saveJSON } from "../store/storage";
 import {
   SONGS,
   UNLOCK_ACCURACY,
@@ -21,6 +22,8 @@ import {
 import { SongFlightEngine, type SongDisplayMode } from "./songFlightEngine";
 
 type Phase = "select" | "playing" | "done";
+
+const METRONOME_KEY = "guitarlearner.songflight.metronome.v1";
 
 interface SongFlightProps {
   pitch: PitchProps;
@@ -46,6 +49,16 @@ export function SongFlight({
   const [phase, setPhase] = useState<Phase>("select");
   const [songIdx, setSongIdx] = useState(0);
   const [displayMode, setDisplayMode] = useState<SongDisplayMode>("note");
+  const [metronome, setMetronome] = useState(
+    () => loadJSON<{ on: boolean }>(METRONOME_KEY, { on: true }).on,
+  );
+
+  const toggleMetronome = useCallback(() => {
+    setMetronome((on) => {
+      saveJSON(METRONOME_KEY, { on: !on });
+      return !on;
+    });
+  }, []);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -93,6 +106,7 @@ export function SongFlight({
       SONGS[songIdxRef.current],
       displayMode,
       pitch.useFlats,
+      metronome,
       {
         onHit: () => {
           hitsRef.current += 1;
@@ -135,10 +149,13 @@ export function SongFlight({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // Keep the engine's label style in sync with the toggle mid-run.
+  // Keep the engine's label style and pulse in sync with the toggles mid-run.
   useEffect(() => {
     engineRef.current?.setDisplayMode(displayMode);
   }, [displayMode]);
+  useEffect(() => {
+    engineRef.current?.setMetronome(metronome);
+  }, [metronome]);
 
   // Route detected notes into the engine while playing.
   useEffect(() => {
@@ -240,6 +257,17 @@ export function SongFlight({
           <div className="flex items-center gap-3">
             <span className="text-emerald-400">{hits} hit</span>
             <span className="text-rose-400">{misses} missed</span>
+            <button
+              onClick={toggleMetronome}
+              className={`rounded-md px-2 py-1 font-semibold transition ${
+                metronome
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "bg-slate-800 text-slate-500 hover:bg-slate-700"
+              }`}
+              title="Metronome pulse at the song's tempo"
+            >
+              ♩ {song.bpm}
+            </button>
             <button
               onClick={() =>
                 setDisplayMode((m) => (m === "note" ? "tab" : "note"))
