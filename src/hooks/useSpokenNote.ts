@@ -1,16 +1,18 @@
 /**
  * useSpokenNote — hands-free note answers via the Web Speech API.
  *
- * While enabled, a continuous SpeechRecognition session listens for spoken
- * note names ("C sharp", "B flat", bare letters and their homophones — see
- * lib/speechNotes.ts) and fires `onNote` with the parsed pitch class. Only
- * FINAL results are parsed: interim text would submit "C" while the player
- * is still saying "C sharp", and answers here are one-guess.
+ * While enabled, it runs short one-utterance recognition sessions that
+ * auto-restart (rather than one `continuous` session — Safari and Android
+ * Chrome are unreliable in continuous mode, often never finalising results).
+ * Interim results are shown live and finalised either when the recogniser
+ * marks them final or after a short pause in speech — so "C sharp" isn't
+ * submitted as "C" mid-utterance, but Safari's habit of never sending
+ * `isFinal` still can't wedge us.
  *
  * Support is Chrome/Edge/Safari (webkit-prefixed); Firefox has no
- * SpeechRecognition, so callers should hide the option when `isSupported`
- * is false. The recogniser auto-restarts when the browser ends the session
- * (they time out after silence).
+ * SpeechRecognition. Some Chromium forks (e.g. Brave) expose the API but
+ * block the speech service — that surfaces as an error message instead of
+ * silence.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -36,6 +38,7 @@ interface Recognition {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  onstart: (() => void) | null;
   onresult: ((e: RecognitionEvent) => void) | null;
   onerror: ((e: RecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
@@ -52,15 +55,22 @@ function recognitionCtor(): (new () => Recognition) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+/** How long after the last interim update an utterance counts as finished. */
+const SETTLE_MS = 800;
+/** Pause between sessions so restart loops can't spin hot. */
+const RESTART_DELAY_MS = 150;
+
 export interface UseSpokenNoteOptions {
   enabled: boolean;
-  /** Fired once per final utterance that names a note. */
+  /** Fired once per utterance that names a note. */
   onNote: (pc: PitchClass) => void;
 }
 
 export function useSpokenNote({ enabled, onNote }: UseSpokenNoteOptions) {
   const isSupported = recognitionCtor() !== null;
-  const [isListening, setIsListening] = useState(false);
+  const [status, setStatus] = useState<"off" | "starting" | "listening">(
+    "off",
+  );
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState("");
 
@@ -72,64 +82,111 @@ export function useSpokenNote({ enabled, onNote }: UseSpokenNoteOptions) {
     const Ctor = recognitionCtor();
     if (!Ctor) return;
 
-    let stopped = false;
-    const rec = new Ctor();
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.lang = "en-US";
+    let disposed = false;
+    let rec: Recognition | null = null;
+    let settle: ReturnType<typeof setTimeout> | null = null;
+    let restart: ReturnType<typeof setTimeout> | null = null;
+    let handled = false; // current utterance already produced an answer
 
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const result = e.results[i];
-        if (!result?.isFinal) continue;
-        const text = result[0]?.transcript ?? "";
-        setTranscript(text.trim());
-        const pc = parseSpokenNote(text);
-        if (pc !== null) onNoteRef.current(pc);
-      }
+    const finalize = (text: string) => {
+      if (disposed || handled) return;
+      const pc = parseSpokenNote(text);
+      if (pc === null) return; // not a note — keep listening
+      handled = true;
+      onNoteRef.current(pc);
     };
-    rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        setError("Microphone permission for voice input was denied.");
-        stopped = true;
-      } else if (e.error === "network") {
-        setError("Voice recognition needs a network connection.");
-      }
-      // "no-speech" / "aborted" are routine — onend's restart handles them.
-    };
-    rec.onend = () => {
-      // Browsers end continuous sessions after silence; keep it alive.
-      if (!stopped) {
-        try {
-          rec.start();
-        } catch {
-          setIsListening(false);
+
+    const spin = () => {
+      if (disposed) return;
+      const r = new Ctor();
+      rec = r;
+      handled = false;
+      r.continuous = false;
+      r.interimResults = true;
+      r.lang = "en-US";
+
+      r.onstart = () => {
+        if (!disposed) setStatus("listening");
+      };
+      r.onresult = (e) => {
+        let text = "";
+        let hasFinal = false;
+        for (let i = 0; i < e.results.length; i++) {
+          text += e.results[i]?.[0]?.transcript ?? "";
+          if (e.results[i]?.isFinal) hasFinal = true;
         }
-      } else {
-        setIsListening(false);
+        setTranscript(text.trim());
+        if (settle) clearTimeout(settle);
+        if (hasFinal) {
+          finalize(text);
+        } else {
+          // Safari/Android often never mark results final — settle instead.
+          settle = setTimeout(() => finalize(text), SETTLE_MS);
+        }
+      };
+      r.onerror = (e) => {
+        if (disposed) return;
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+          setError(
+            "Microphone permission for voice input was denied — allow it in the browser, then toggle Voice again.",
+          );
+          disposed = true;
+          setStatus("off");
+        } else if (e.error === "audio-capture") {
+          setError("No microphone was found for voice input.");
+        } else if (e.error === "network") {
+          setError(
+            "The browser's speech service couldn't be reached (some browsers, like Brave, block it — try Chrome, Edge or Safari).",
+          );
+        }
+        // "no-speech" / "aborted" are routine — the restart loop handles them.
+      };
+      r.onend = () => {
+        if (settle) clearTimeout(settle);
+        settle = null;
+        if (disposed) {
+          setStatus("off");
+          return;
+        }
+        // One-utterance sessions end constantly; start the next one.
+        restart = setTimeout(spin, RESTART_DELAY_MS);
+      };
+
+      try {
+        r.start();
+        setStatus((s) => (s === "listening" ? s : "starting"));
+      } catch {
+        if (!disposed) setError("Could not start voice recognition.");
       }
     };
 
-    try {
-      rec.start();
-      setIsListening(true);
-      setError(null);
-    } catch {
-      setError("Could not start voice recognition.");
-    }
+    setError(null);
+    setTranscript("");
+    spin();
 
     return () => {
-      stopped = true;
-      rec.onresult = null;
-      rec.onend = null;
-      try {
-        rec.stop();
-      } catch {
-        /* already stopped */
+      disposed = true;
+      if (settle) clearTimeout(settle);
+      if (restart) clearTimeout(restart);
+      if (rec) {
+        rec.onresult = null;
+        rec.onend = null;
+        rec.onerror = null;
+        try {
+          rec.stop();
+        } catch {
+          /* already stopped */
+        }
       }
-      setIsListening(false);
+      setStatus("off");
     };
   }, [enabled]);
 
-  return { isSupported, isListening, error, transcript };
+  return {
+    isSupported,
+    status,
+    isListening: status === "listening",
+    error,
+    transcript,
+  };
 }

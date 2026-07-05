@@ -583,17 +583,25 @@ export function FretQuiz({
         {inputMode === "voice" && voice.isSupported && (
           <div className="mt-2 text-center text-xs">
             {voice.error ? (
-              <span className="text-rose-300">{voice.error}</span>
+              <span className="rounded-lg bg-rose-950/50 px-3 py-1.5 text-rose-300">
+                {voice.error}
+              </span>
             ) : (
               <span className="text-slate-400">
                 <span
                   className={`mr-1 inline-block h-2 w-2 rounded-full ${
                     voice.isListening
                       ? "animate-pulse bg-emerald-400"
-                      : "bg-slate-600"
+                      : voice.status === "starting"
+                        ? "animate-pulse bg-amber-400"
+                        : "bg-slate-600"
                   }`}
                 />
-                say the note — “A sharp”, “B flat”, “E”…
+                {voice.isListening
+                  ? "listening — say the note: “A sharp”, “B flat”, “E”…"
+                  : voice.status === "starting"
+                    ? "starting the mic…"
+                    : "voice is off"}
                 {voice.transcript && (
                   <span className="ml-2 text-slate-500">
                     heard “{voice.transcript}”
