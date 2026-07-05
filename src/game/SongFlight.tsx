@@ -150,7 +150,8 @@ export function SongFlight({
   const startSong = useCallback(
     async (idx: number) => {
       if (!pitch.isListening) {
-        await pitch.start();
+        const ok = await pitch.start();
+        if (!ok) return; // stay on the song select, where the error shows
       }
       songIdxRef.current = idx;
       hitsRef.current = 0;

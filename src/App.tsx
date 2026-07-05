@@ -40,7 +40,7 @@ export default function App() {
 
   const start = useCallback(async () => {
     warmUpAudio();
-    await pitch.start();
+    return pitch.start();
   }, [pitch]);
 
   const goHome = useCallback(() => {
@@ -170,7 +170,8 @@ export interface PitchProps {
   isListening: boolean;
   error: string | null;
   isSupported: boolean;
-  start: () => Promise<void>;
+  /** Resolves true when the mic is live; false when it failed to start. */
+  start: () => Promise<boolean>;
   stop: () => void;
   registerNoteHandler: (cb: ((n: DetectedNote) => void) | null) => void;
   useFlats: boolean;

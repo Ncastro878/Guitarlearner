@@ -74,7 +74,7 @@ const SILENT: Pick<
 
 export function usePitchDetection(
   options: UsePitchDetectionOptions = {},
-): PitchDetectionState & { start: () => Promise<void>; stop: () => void } {
+): PitchDetectionState & { start: () => Promise<boolean>; stop: () => void } {
   const {
     a4 = DEFAULT_A4,
     sensitivity = 55,
@@ -150,10 +150,11 @@ export function usePitchDetection(
     setStableNote(null);
   }, []);
 
-  const start = useCallback(async () => {
+  /** Returns true when the mic is live; false when it failed (error is set). */
+  const start = useCallback(async (): Promise<boolean> => {
     if (!isSupported) {
       setError("Your browser does not support microphone audio input.");
-      return;
+      return false;
     }
     setError(null);
     try {
@@ -191,6 +192,7 @@ export function usePitchDetection(
 
       setIsListening(true);
       loop();
+      return true;
     } catch (err) {
       const message =
         err instanceof DOMException && err.name === "NotAllowedError"
@@ -200,6 +202,7 @@ export function usePitchDetection(
             : "Could not start the microphone.";
       setError(message);
       stop();
+      return false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSupported, bufferSize, sensitivity, stop]);
