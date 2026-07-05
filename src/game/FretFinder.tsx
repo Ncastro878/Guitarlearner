@@ -230,7 +230,8 @@ export function FretFinder({
   const startZone = useCallback(
     async (idx: number) => {
       if (!pitch.isListening) {
-        await pitch.start();
+        const ok = await pitch.start();
+        if (!ok) return; // stay on the zone select, where the error shows
       }
       clearTimers();
       zoneIdxRef.current = idx;

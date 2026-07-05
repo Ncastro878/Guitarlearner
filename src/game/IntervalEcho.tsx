@@ -254,7 +254,8 @@ export function IntervalEcho({
   const startLevel = useCallback(
     async (idx: number) => {
       if (!pitch.isListening) {
-        await pitch.start();
+        const ok = await pitch.start();
+        if (!ok) return; // stay on the level select, where the error shows
       }
       clearTimers();
       levelIdxRef.current = idx;
