@@ -14,6 +14,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Fretboard } from "../components/Fretboard";
 import { NeckHeatmap } from "../components/NeckHeatmap";
+import { useSpokenNote } from "../hooks/useSpokenNote";
+import { loadJSON, saveJSON } from "../store/storage";
 import { STANDARD_TUNING } from "../lib/guitar";
 import { mod12, parseNote, pitchClassName, type PitchClass } from "../lib/theory";
 import { playError, playSuccess } from "../lib/tones";
@@ -55,6 +57,9 @@ const UNLOCK_ACCURACY = 0.6;
 const stringLabel = (n: number) =>
   STANDARD_TUNING.find((s) => s.number === n)?.label ?? `string ${n}`;
 
+type InputMode = "tap" | "voice";
+const INPUT_MODE_KEY = "guitarlearner.fretquiz.input.v1";
+
 export function FretQuiz({
   useFlats,
   soundEffects,
@@ -74,6 +79,14 @@ export function FretQuiz({
   const [feedback, setFeedback] = useState<Feedback>("idle");
   const [staged, setStaged] = useState<PitchClass | null>(null);
   const [answered, setAnswered] = useState<PitchClass | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>(() =>
+    loadJSON<{ mode: InputMode }>(INPUT_MODE_KEY, { mode: "tap" }).mode,
+  );
+
+  const setInputModePersisted = useCallback((mode: InputMode) => {
+    setInputMode(mode);
+    saveJSON(INPUT_MODE_KEY, { mode });
+  }, []);
 
   const level: FretQuizLevel = FRET_QUIZ_LEVELS[levelIdx];
 
@@ -222,6 +235,13 @@ export function FretQuiz({
 
   const handleTimeoutRef = useRef(handleTimeout);
   handleTimeoutRef.current = handleTimeout;
+
+  // Hands-free answers: while enabled, spoken note names ("C sharp") submit
+  // directly. submitAnswer's accepting guard drops any late recognitions.
+  const voice = useSpokenNote({
+    enabled: inputMode === "voice" && phase === "playing",
+    onNote: submitAnswer,
+  });
 
   const finishLevel = useCallback(() => {
     clearTimers();
@@ -533,6 +553,57 @@ export function FretQuiz({
           )}
         </div>
 
+        {/* input mode toggle */}
+        {voice.isSupported && (
+          <div className="mt-2 flex justify-center">
+            <div className="flex overflow-hidden rounded-lg border border-slate-700">
+              {(
+                [
+                  ["tap", "⌨️ Tap"],
+                  ["voice", "🎤 Voice"],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setInputModePersisted(mode)}
+                  className={`px-3 py-1.5 text-xs font-semibold transition ${
+                    inputMode === mode
+                      ? "bg-emerald-500 text-slate-950"
+                      : "bg-slate-900 text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* voice status */}
+        {inputMode === "voice" && voice.isSupported && (
+          <div className="mt-2 text-center text-xs">
+            {voice.error ? (
+              <span className="text-rose-300">{voice.error}</span>
+            ) : (
+              <span className="text-slate-400">
+                <span
+                  className={`mr-1 inline-block h-2 w-2 rounded-full ${
+                    voice.isListening
+                      ? "animate-pulse bg-emerald-400"
+                      : "bg-slate-600"
+                  }`}
+                />
+                say the note — “A sharp”, “B flat”, “E”…
+                {voice.transcript && (
+                  <span className="ml-2 text-slate-500">
+                    heard “{voice.transcript}”
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* answer pad — alphabetical from A so there's no searching */}
         <div className="mt-2 grid grid-cols-6 gap-2">
           {Array.from({ length: 12 }, (_, i) => mod12(9 + i)).map((pc) => (
@@ -547,7 +618,9 @@ export function FretQuiz({
           ))}
         </div>
         <p className="mt-2 text-center text-[10px] text-slate-600">
-          keyboard: A–G, then # or b · Enter to send
+          {inputMode === "voice"
+            ? "buttons and keyboard still work as a fallback"
+            : "keyboard: A–G, then # or b · Enter to send"}
         </p>
       </main>
     </div>
