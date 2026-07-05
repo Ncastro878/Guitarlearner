@@ -45,19 +45,31 @@ describe("positionsInZone", () => {
 });
 
 describe("buildQuestion / judgeFinderNote", () => {
+  const r = (name: string, cents = 0) => ({
+    midi: parseNote(name).midi,
+    cents,
+  });
+
   it("accepts only the zone's octave of the pitch class", () => {
     const q = buildQuestion(zone("s4"), parseNote("G").pitchClass);
-    expect(judgeFinderNote(q, parseNote("G3").midi)).toBe("hit");
+    expect(judgeFinderNote(q, r("G3"))).toBe("hit");
     // The "easy G" on the high E string is G4 — right name, wrong zone.
-    expect(judgeFinderNote(q, parseNote("G4").midi)).toBe("wrongOctave");
-    expect(judgeFinderNote(q, parseNote("G2").midi)).toBe("wrongOctave");
-    expect(judgeFinderNote(q, parseNote("A3").midi)).toBe("wrong");
+    expect(judgeFinderNote(q, r("G4"))).toBe("wrongOctave");
+    expect(judgeFinderNote(q, r("G2"))).toBe("wrongOctave");
+    expect(judgeFinderNote(q, r("A3"))).toBe("wrong");
   });
 
   it("accepts every valid spot in a pair zone", () => {
     const q = buildQuestion(zone("p65"), parseNote("A").pitchClass);
-    expect(judgeFinderNote(q, parseNote("A2").midi)).toBe("hit"); // fret 5 / open
-    expect(judgeFinderNote(q, parseNote("A3").midi)).toBe("hit"); // A string fret 12
+    expect(judgeFinderNote(q, r("A2"))).toBe("hit"); // fret 5 / open
+    expect(judgeFinderNote(q, r("A3"))).toBe("hit"); // A string fret 12
+  });
+
+  it("forgives poor intonation within a widened tolerance", () => {
+    const q = buildQuestion(zone("s4"), parseNote("G").pitchClass);
+    const sharpG = r("G3", 55); // intonation drifting sharp up the neck
+    expect(judgeFinderNote(q, sharpG)).toBe("wrong"); // default ±50
+    expect(judgeFinderNote(q, sharpG, 80)).toBe("hit");
   });
 });
 

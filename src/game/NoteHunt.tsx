@@ -16,6 +16,7 @@ import { pitchClassName, type DetectedNote } from "../lib/theory";
 import { playError, playSuccess } from "../lib/tones";
 import {
   NOTE_HUNT_LEVELS,
+  isCorrectGuess,
   nextTarget,
   type NoteHuntLevel,
   type NoteHuntTarget,
@@ -193,7 +194,8 @@ export function NoteHunt({
     if (phase !== "playing") return;
     pitch.registerNoteHandler((note) => {
       if (!acceptingRef.current || !targetRef.current) return;
-      if (note.pitchClass === targetRef.current.pitchClass) handleCorrect();
+      if (isCorrectGuess(targetRef.current, note, pitch.toleranceCents))
+        handleCorrect();
       else handleWrong(note);
     });
     return () => pitch.registerNoteHandler(null);

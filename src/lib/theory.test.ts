@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  centsFromMidi,
+  centsFromPitchClass,
   parseNote,
   midiFromParts,
   noteFromMidi,
@@ -226,5 +228,31 @@ describe("scales", () => {
       "B4",
       "C5",
     ]);
+  });
+});
+
+describe("pitch tolerance helpers", () => {
+  const G3 = parseNote("G3").midi;
+
+  it("centsFromMidi measures fractional distance to an exact note", () => {
+    expect(centsFromMidi({ midi: G3, cents: 0 }, G3)).toBe(0);
+    expect(centsFromMidi({ midi: G3, cents: -30 }, G3)).toBeCloseTo(30);
+    expect(centsFromMidi({ midi: G3 + 1, cents: 20 }, G3)).toBeCloseTo(120);
+  });
+
+  it("centsFromPitchClass measures distance to the nearest octave of a class", () => {
+    const pcG = parseNote("G").pitchClass;
+    expect(centsFromPitchClass({ midi: G3, cents: 0 }, pcG)).toBe(0);
+    expect(
+      centsFromPitchClass({ midi: parseNote("G5").midi, cents: 15 }, pcG),
+    ).toBeCloseTo(15);
+    // 40 cents flat of F#3 is 140 from G, wrapping the short way.
+    expect(
+      centsFromPitchClass({ midi: parseNote("F#3").midi, cents: -40 }, pcG),
+    ).toBeCloseTo(140);
+    // A perfectly played neighbouring semitone sits at exactly 100.
+    expect(
+      centsFromPitchClass({ midi: parseNote("F#3").midi, cents: 0 }, pcG),
+    ).toBeCloseTo(100);
   });
 });

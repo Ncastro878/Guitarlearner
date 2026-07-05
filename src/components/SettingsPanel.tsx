@@ -86,6 +86,33 @@ export function SettingsPanel({
             </p>
           </label>
 
+          {/* Pitch tolerance */}
+          <label className="block">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="font-medium">Pitch tolerance</span>
+              <span className="tabular-nums text-slate-400">
+                ±{settings.toleranceCents} cents
+              </span>
+            </div>
+            <input
+              type="range"
+              min={50}
+              max={100}
+              step={5}
+              value={settings.toleranceCents}
+              onChange={(e) =>
+                update({ toleranceCents: Number(e.target.value) })
+              }
+              className="w-full accent-emerald-500"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              How far off a note can be and still count, in all games. Raise
+              it if your strings drift out of tune or intonation up the neck
+              isn't perfect. Near 100, a cleanly played neighbouring fret may
+              start to count too.
+            </p>
+          </label>
+
           {/* Toggles */}
           <div className="flex items-center justify-between">
             <span className="font-medium">Sound effects</span>

@@ -166,6 +166,41 @@ export function frequencyToNote(
   };
 }
 
+/**
+ * The midi + cents pair every game judges against ({@link DetectedNote}
+ * satisfies it). Kept minimal so pure logic can be tested without a mic.
+ */
+export interface PitchReading {
+  midi: number;
+  cents: number;
+}
+
+/**
+ * Absolute distance in cents between a detected pitch and an exact target
+ * note. E.g. a reading 30 cents flat of G3 is 30 from G3 and 130 from G#3.
+ */
+export function centsFromMidi(
+  reading: PitchReading,
+  targetMidi: number,
+): number {
+  return Math.abs((reading.midi + reading.cents / 100 - targetMidi) * 100);
+}
+
+/**
+ * Distance in cents from a detected pitch to the NEAREST occurrence of a
+ * pitch class (any octave). Games that match by pitch class use this with a
+ * tolerance, so slightly out-of-tune strings or imperfect intonation still
+ * register — at 100 cents of tolerance the neighbouring semitone is the
+ * boundary and is not accepted.
+ */
+export function centsFromPitchClass(
+  reading: PitchReading,
+  pc: PitchClass,
+): number {
+  const d = mod12(reading.midi + reading.cents / 100 - pc);
+  return Math.min(d, 12 - d) * 100;
+}
+
 // ---------------------------------------------------------------------------
 // Formatting
 // ---------------------------------------------------------------------------

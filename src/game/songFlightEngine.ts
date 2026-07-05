@@ -62,6 +62,7 @@ export class SongFlightEngine {
   private displayMode: SongDisplayMode;
   private useFlats: boolean;
   private metronome: boolean;
+  private toleranceCents: number;
   private lastBeat = -1;
 
   private states: NoteState[];
@@ -86,6 +87,7 @@ export class SongFlightEngine {
     displayMode: SongDisplayMode,
     useFlats: boolean,
     metronome: boolean,
+    toleranceCents: number,
     cb: SongFlightCallbacks,
   ) {
     this.canvas = canvas;
@@ -96,6 +98,7 @@ export class SongFlightEngine {
     this.displayMode = displayMode;
     this.useFlats = useFlats;
     this.metronome = metronome;
+    this.toleranceCents = toleranceCents;
     this.cb = cb;
     this.states = song.notes.map(() => "pending");
     this.resize();
@@ -142,7 +145,7 @@ export class SongFlightEngine {
   handlePitch(note: DetectedNote): void {
     if (this.ended || this.startT === null || this.lastT === null) return;
     const now = this.elapsed(this.lastT);
-    const j = judgeNote(this.song, this.states, now, note.pitchClass);
+    const j = judgeNote(this.song, this.states, now, note, this.toleranceCents);
     if (j.kind === "hit") {
       this.states[j.index] = "hit";
       this.flash = { kind: "hit", t: 1 };

@@ -216,7 +216,11 @@ export function FretFinder({
     if (phase !== "playing") return;
     pitch.registerNoteHandler((note) => {
       if (!acceptingRef.current || !questionRef.current) return;
-      const verdict = judgeFinderNote(questionRef.current, note.midi);
+      const verdict = judgeFinderNote(
+        questionRef.current,
+        note,
+        pitch.toleranceCents,
+      );
       if (verdict === "hit") handleCorrect();
       else showHeard(note, verdict === "wrongOctave");
     });

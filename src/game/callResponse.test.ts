@@ -81,16 +81,25 @@ describe("generatePhrase", () => {
 
 describe("matchesAt", () => {
   const phrase = ["G3", "B3", "D4"].map((s) => parseNote(s).midi);
+  const r = (name: string, cents = 0) => ({
+    midi: parseNote(name).midi,
+    cents,
+  });
 
   it("matches the indexed note by pitch class in any octave", () => {
-    expect(matchesAt(phrase, 0, parseNote("G3").pitchClass)).toBe(true);
-    expect(matchesAt(phrase, 0, parseNote("G5").pitchClass)).toBe(true);
-    expect(matchesAt(phrase, 1, parseNote("B2").pitchClass)).toBe(true);
+    expect(matchesAt(phrase, 0, r("G3"))).toBe(true);
+    expect(matchesAt(phrase, 0, r("G5"))).toBe(true);
+    expect(matchesAt(phrase, 1, r("B2"))).toBe(true);
   });
 
   it("rejects wrong pitches and out-of-range indices", () => {
-    expect(matchesAt(phrase, 0, parseNote("A3").pitchClass)).toBe(false);
-    expect(matchesAt(phrase, 3, parseNote("G3").pitchClass)).toBe(false);
+    expect(matchesAt(phrase, 0, r("A3"))).toBe(false);
+    expect(matchesAt(phrase, 3, r("G3"))).toBe(false);
+  });
+
+  it("forgives out-of-tune notes within a widened tolerance", () => {
+    expect(matchesAt(phrase, 0, r("F#3", 40))).toBe(false); // 60c from G
+    expect(matchesAt(phrase, 0, r("F#3", 40), 75)).toBe(true);
   });
 });
 

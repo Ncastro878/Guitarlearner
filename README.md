@@ -119,9 +119,15 @@ same applies to interval direction in Interval Echo: "a 5th above A" is checked
 by pitch class (E), so an E below the root also counts. Wrong notes in Interval
 Echo show which interval you actually played — a free ear-training hint.
 
+A **pitch tolerance** setting (±50–100 cents, in Settings) controls how far
+off a played note may be and still count, in every mic game — raise it if
+your strings drift out of tune or the intonation up the neck isn't perfect.
+At the default ±50 only the nearest note counts; near ±100 a cleanly played
+neighbouring fret may start to count too (exactly 100 never does).
+
 Progress (level unlocks, best streaks, lifetime correct counts) and settings
-(A4 reference, input sensitivity, sound effects, sharp/flat spelling) are
-persisted in **`localStorage`**.
+(A4 reference, input sensitivity, pitch tolerance, sound effects, sharp/flat
+spelling) are persisted in **`localStorage`**.
 
 ---
 

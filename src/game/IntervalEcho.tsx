@@ -240,7 +240,8 @@ export function IntervalEcho({
     if (phase !== "playing") return;
     pitch.registerNoteHandler((note) => {
       if (!acceptingRef.current || !targetRef.current) return;
-      if (isCorrectGuess(targetRef.current, note.midi)) handleCorrect();
+      if (isCorrectGuess(targetRef.current, note, pitch.toleranceCents))
+        handleCorrect();
       else handleWrong(note);
     });
     return () => pitch.registerNoteHandler(null);

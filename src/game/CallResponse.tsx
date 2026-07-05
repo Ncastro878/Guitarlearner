@@ -253,7 +253,14 @@ export function CallResponse({
     if (phase !== "playing") return;
     pitch.registerNoteHandler((note) => {
       if (!acceptingRef.current || !roundActiveRef.current) return;
-      if (matchesAt(phraseRef.current, idxRef.current, note.pitchClass)) {
+      if (
+        matchesAt(
+          phraseRef.current,
+          idxRef.current,
+          note,
+          pitch.toleranceCents,
+        )
+      ) {
         idxRef.current += 1;
         setMatched(idxRef.current);
         setWrongNote(null);

@@ -4,7 +4,11 @@
  */
 
 import { STANDARD_TUNING } from "../lib/guitar";
-import { type PitchClass } from "../lib/theory";
+import {
+  centsFromPitchClass,
+  type PitchClass,
+  type PitchReading,
+} from "../lib/theory";
 
 /** Pitch classes of the seven natural notes (C D E F G A B). */
 export const NATURAL_PITCH_CLASSES: PitchClass[] = [0, 2, 4, 5, 7, 9, 11];
@@ -103,10 +107,15 @@ export function nextTarget(
   return { pitchClass, stringNumber, stringLabel };
 }
 
-/** A guess is correct if its pitch class matches the target (octave ignored). */
+/**
+ * A guess is correct if it lands within `toleranceCents` of the target's
+ * pitch class (octave ignored) — the tolerance forgives out-of-tune strings
+ * and imperfect intonation.
+ */
 export function isCorrectGuess(
   target: NoteHuntTarget,
-  guessPitchClass: PitchClass,
+  guess: PitchReading,
+  toleranceCents = 50,
 ): boolean {
-  return target.pitchClass === guessPitchClass;
+  return centsFromPitchClass(guess, target.pitchClass) < toleranceCents;
 }
