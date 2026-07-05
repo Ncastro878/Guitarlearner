@@ -11,6 +11,7 @@ import { Aurora } from "./game/Aurora";
 import { SongFlight } from "./game/SongFlight";
 import { CallResponse } from "./game/CallResponse";
 import { FretQuiz } from "./game/FretQuiz";
+import { FretFinder } from "./game/FretFinder";
 import { ComingSoon } from "./components/ComingSoon";
 
 export type Screen = "home" | GameModeId;
@@ -95,6 +96,16 @@ export default function App() {
             bestStreak={progress.intervalEcho.bestStreak}
             unlockedLevel={progress.intervalEcho.unlockedLevel}
             onRecord={(o) => recordResult("intervalEcho", o)}
+            onExit={goHome}
+          />
+        )}
+
+        {screen === "fretFinder" && (
+          <FretFinder
+            pitch={pitchProps}
+            soundEffects={settings.soundEffects}
+            bestStreak={progress.fretFinder?.bestStreak ?? 0}
+            onRecord={(o) => recordResult("fretFinder", o)}
             onExit={goHome}
           />
         )}

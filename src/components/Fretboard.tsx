@@ -18,6 +18,8 @@ export interface FretboardHighlight extends TabPosition {
   stroke?: string;
   /** Label text colour (default near-black, readable on light fills). */
   labelColor?: string;
+  /** Circle radius (default 8.5; heatmaps use smaller dots). */
+  r?: number;
 }
 
 interface FretboardProps {
@@ -118,7 +120,7 @@ export function Fretboard({ highlights, minFrets = 5 }: FretboardProps) {
           <circle
             cx={spotX(h.fret)}
             cy={stringY(h.string)}
-            r={8.5}
+            r={h.r ?? 8.5}
             fill={h.color ?? "#10b981"}
             stroke={h.stroke ?? "#065f46"}
             strokeWidth={1.5}

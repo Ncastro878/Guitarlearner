@@ -41,6 +41,13 @@ const MODES: ModeCard[] = [
     ready: true,
   },
   {
+    id: "fretFinder",
+    title: "Fret Finder",
+    emoji: "🧭",
+    blurb: "Find the named note in one zone of the neck — octave checked.",
+    ready: true,
+  },
+  {
     id: "callResponse",
     title: "Call & Response",
     emoji: "👂",

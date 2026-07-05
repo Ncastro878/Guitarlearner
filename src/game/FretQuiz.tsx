@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Fretboard } from "../components/Fretboard";
+import { NeckHeatmap } from "../components/NeckHeatmap";
 import { STANDARD_TUNING } from "../lib/guitar";
 import { mod12, parseNote, pitchClassName, type PitchClass } from "../lib/theory";
 import { playError, playSuccess } from "../lib/tones";
@@ -317,6 +318,15 @@ export function FretQuiz({
             The quiz remembers every position: ones you miss come back much
             more often, ones you nail fade away.
           </p>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3">
+            <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Your neck memory
+            </p>
+            <NeckHeatmap
+              memory={memory}
+              idFor={(s, f) => cardId({ string: s, fret: f })}
+            />
+          </div>
           {FRET_QUIZ_LEVELS.map((lvl, idx) => {
             const locked = idx > unlockedLevel;
             const mastery = levelMastery(lvl, memory);
