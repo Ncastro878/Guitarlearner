@@ -9,7 +9,20 @@
  */
 
 import { STANDARD_TUNING } from "../lib/guitar";
+import {
+  masteryCount,
+  pickWeighted,
+  recordAnswer,
+  type SrsMemory,
+} from "../lib/srs";
 import { mod12, parseNote, type PitchClass } from "../lib/theory";
+
+export {
+  MASTERY_BOX,
+  MAX_BOX,
+  weightFor,
+  type CardStats,
+} from "../lib/srs";
 
 /** Pitch classes of the seven natural notes. */
 const NATURALS = new Set([0, 2, 4, 5, 7, 9, 11]);
@@ -134,39 +147,13 @@ export function isCorrectAnswer(
 }
 
 // ---------------------------------------------------------------------------
-// Spaced-repetition memory (Leitner boxes, adapted for an in-session drill)
+// Spaced-repetition memory — thin position-flavoured wrappers over the
+// shared Leitner core in lib/srs.ts (see that file for how the boxes and
+// weighted selection work).
 // ---------------------------------------------------------------------------
-//
-// Every position on the neck is a "card" with a box 0–4. A correct answer
-// promotes the card one box; a wrong answer (or timeout) drops it back to
-// box 0. Question selection samples positions weighted by box — box-0 cards
-// are drawn ~16× as often as box-4 cards, unseen cards land in between — so
-// the drill automatically concentrates on the player's gaps and lets the
-// notes they know recede. Unlike calendar-based Anki scheduling, everything
-// happens within and across play sessions via weights, which fits a timed
-// 10-question round.
-
-export interface CardStats {
-  /** Leitner box 0 (weakest) – 4 (mastered). */
-  box: number;
-  /** Lifetime attempts at this position. */
-  attempts: number;
-  /** Lifetime correct answers. */
-  correct: number;
-}
 
 /** Memory across all positions, keyed by {@link cardId}. */
-export type FretQuizMemory = Record<string, CardStats>;
-
-export const MAX_BOX = 4;
-/** Box at or above which a position counts as "solid" for mastery stats. */
-export const MASTERY_BOX = 3;
-/** Selection weight per box — box 0 is asked 16× as often as box 4. */
-const BOX_WEIGHTS = [8, 4, 2, 1, 0.5];
-/** Unseen positions sit between "wrong" and "learning" so new material flows in. */
-const NEW_WEIGHT = 5;
-/** Damping for positions asked in the last few questions (no ping-pong). */
-const RECENT_DAMP = 0.2;
+export type FretQuizMemory = SrsMemory;
 
 /** Stable identity of a position. */
 export function cardId(q: Pick<FretQuizQuestion, "string" | "fret">): string {
@@ -179,22 +166,7 @@ export function applyResult(
   question: FretQuizQuestion,
   correct: boolean,
 ): FretQuizMemory {
-  const id = cardId(question);
-  const cur = memory[id];
-  return {
-    ...memory,
-    [id]: {
-      box: correct ? Math.min(MAX_BOX, (cur?.box ?? 0) + 1) : 0,
-      attempts: (cur?.attempts ?? 0) + 1,
-      correct: (cur?.correct ?? 0) + (correct ? 1 : 0),
-    },
-  };
-}
-
-/** Selection weight of a position given its stats (unseen = NEW_WEIGHT). */
-export function weightFor(stats: CardStats | undefined): number {
-  if (!stats) return NEW_WEIGHT;
-  return BOX_WEIGHTS[Math.max(0, Math.min(MAX_BOX, stats.box))];
+  return recordAnswer(memory, cardId(question), correct);
 }
 
 /**
@@ -209,23 +181,14 @@ export function nextQuestionWeighted(
   recentIds: readonly string[] = [],
   rng: () => number = Math.random,
 ): FretQuizQuestion {
-  let pool = questionCandidates(level);
-  if (previous && pool.length > 1) {
-    pool = pool.filter(
-      (q) => !(q.string === previous.string && q.fret === previous.fret),
-    );
-  }
-  const weights = pool.map((q) => {
-    const w = weightFor(memory[cardId(q)]);
-    return recentIds.includes(cardId(q)) ? w * RECENT_DAMP : w;
-  });
-  const total = weights.reduce((a, b) => a + b, 0);
-  let r = rng() * total;
-  for (let i = 0; i < pool.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return pool[i];
-  }
-  return pool[pool.length - 1];
+  return pickWeighted(
+    questionCandidates(level),
+    cardId,
+    memory,
+    previous ? cardId(previous) : null,
+    recentIds,
+    rng,
+  );
 }
 
 /** How many of a level's positions are solid (box ≥ MASTERY_BOX). */
@@ -233,9 +196,5 @@ export function levelMastery(
   level: FretQuizLevel,
   memory: FretQuizMemory,
 ): { solid: number; total: number } {
-  const pool = questionCandidates(level);
-  const solid = pool.filter(
-    (q) => (memory[cardId(q)]?.box ?? 0) >= MASTERY_BOX,
-  ).length;
-  return { solid, total: pool.length };
+  return masteryCount(questionCandidates(level).map(cardId), memory);
 }

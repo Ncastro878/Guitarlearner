@@ -105,7 +105,8 @@ rest are stubbed as "coming soon".
 | **🎵 Interval Echo** | ✅ Playable | Plays a root note through the speakers, asks you to play a named interval above it. Levels progress: 3rds/4ths/5ths → 3rds & 6ths → 2nds, 7ths & tritone → full chromatic speed round. The clock only starts after the root finishes ringing, and the root can be replayed any time. |
 | **🎸 Arpeggio Gauntlet** | 🚧 Coming soon | Shows a chord symbol; play every chord tone in any order. |
 | **🏃 Scale Runner** | 🚧 Coming soon | Run a scale ascending — one wrong note resets the streak. |
-| **🧠 Fret Quiz** | ✅ Playable | The reverse quiz — and the one mode that needs **no guitar or mic**. A fret lights up on the neck diagram; name the note before the clock runs out, by tapping a note button or typing A–G (with # / b modifiers). Levels: naturals on E+A strings → D+G → B+high E → the full chromatic neck. **Spaced repetition built in**: every position is a Leitner card — misses drop it to box 0 and it comes back ~16× as often as mastered positions, correct answers promote it until it fades away. Memory persists across sessions; each level shows how many positions are "solid". |
+| **🧠 Fret Quiz** | ✅ Playable | The reverse quiz — and the one mode that needs **no guitar or mic**. A fret lights up on the neck diagram; name the note before the clock runs out, by tapping a note button or typing A–G (with # / b modifiers). Levels: naturals on E+A strings → D+G → B+high E → the full chromatic neck. **Spaced repetition built in**: every position is a Leitner card — misses drop it to box 0 and it comes back ~16× as often as mastered positions, correct answers promote it until it fades away. Memory persists across sessions; each level shows how many positions are "solid" and a **neck heatmap** colours every position by memory box. |
+| **🧭 Fret Finder** | ✅ Playable | The mic-driven counterpart of Fret Quiz: pick a **neck zone** (one string, a string pair, or the whole neck), get a note name, and play it *there*. The **octave check enforces the zone** — "G on the D string" is G3, so the easy G4 elsewhere is rejected as "right note, wrong octave". Same Leitner drilling, one card per zone + note; misses reveal the spot(s) on the fretboard diagram. Naturals-only toggle. |
 | **👂 Call & Response** | ✅ Playable | The app plays a short phrase through the speakers; echo it back note by note (first note's name shown as an anchor, the rest is your ear). Levels grow the phrase: 2 notes → 3 → 4 → 4 with wide leaps. Misses reveal the phrase on a fretboard diagram. |
 | **🐦 Fret Bird** | ✅ Playable | Flappy-bird-meets-Guitar-Hero: a song's melody scrolls in as pipe gates labelled with the note to play (note names or a mini tab stave — toggleable). Play each note as its gap reaches the bird to flap through; unplayed gates are misses. Songs unlock in difficulty order: Mary Had a Little Lamb → Twinkle Twinkle → Ode to Joy → Happy Birthday. |
 | **✨ Aurora** | ✅ Playable | A free-play visualizer, not a drill: pick a key, and a canvas of polyrhythmic orbit rings (one per scale degree, revolving at 3:4:5:… rpm) reacts to what you play. In-key notes erupt colour bursts from their ring and build "flow" that makes the scene bloom; out-of-key notes glitch it — screen shake, red wash, shards. No timer, no fail state. |
@@ -160,6 +161,8 @@ src/
     CallResponse.tsx   # Call & Response ear-training mode
     fretQuiz.ts        # pure question generation (+ fretQuiz.test.ts)
     FretQuiz.tsx       # Fret Quiz — name the lit fret (no mic needed)
+    fretFinder.ts      # pure zone/question/judging logic (+ fretFinder.test.ts)
+    FretFinder.tsx     # Fret Finder — play the note in a neck zone
   App.tsx              # screen router + shared pitch engine wiring
   main.tsx
 ```
