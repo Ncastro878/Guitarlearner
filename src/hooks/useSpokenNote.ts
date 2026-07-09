@@ -87,6 +87,7 @@ export function useSpokenNote({ enabled, onNote }: UseSpokenNoteOptions) {
     let settle: ReturnType<typeof setTimeout> | null = null;
     let restart: ReturnType<typeof setTimeout> | null = null;
     let handled = false; // current utterance already produced an answer
+    let active = false; // a recognition session is currently running
 
     const finalize = (text: string) => {
       if (disposed || handled) return;
@@ -106,6 +107,7 @@ export function useSpokenNote({ enabled, onNote }: UseSpokenNoteOptions) {
       r.lang = "en-US";
 
       r.onstart = () => {
+        active = true;
         if (!disposed) setStatus("listening");
       };
       r.onresult = (e) => {
@@ -142,9 +144,16 @@ export function useSpokenNote({ enabled, onNote }: UseSpokenNoteOptions) {
         // "no-speech" / "aborted" are routine — the restart loop handles them.
       };
       r.onend = () => {
+        active = false;
         if (settle) clearTimeout(settle);
         settle = null;
         if (disposed) {
+          setStatus("off");
+          return;
+        }
+        // Hidden tab: release the mic and wait — the visibility listener
+        // below restarts recognition when the player comes back.
+        if (document.hidden) {
           setStatus("off");
           return;
         }
@@ -160,12 +169,29 @@ export function useSpokenNote({ enabled, onNote }: UseSpokenNoteOptions) {
       }
     };
 
+    // Release the mic when the tab is hidden (so background music isn't
+    // interrupted) and pick recognition back up on return.
+    const onVisibility = () => {
+      if (disposed) return;
+      if (document.hidden) {
+        try {
+          rec?.stop();
+        } catch {
+          /* already stopped */
+        }
+      } else if (!active) {
+        spin();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
     setError(null);
     setTranscript("");
     spin();
 
     return () => {
       disposed = true;
+      document.removeEventListener("visibilitychange", onVisibility);
       if (settle) clearTimeout(settle);
       if (restart) clearTimeout(restart);
       if (rec) {
