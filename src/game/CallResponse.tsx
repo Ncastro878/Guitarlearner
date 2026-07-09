@@ -468,6 +468,7 @@ export function CallResponse({
           {feedback === "miss" && (
             <div className="mt-5 w-full">
               <Fretboard
+                showStringLabels
                 highlights={phrase.flatMap((m, i) => {
                   const tab = noteToTab(m);
                   return tab ? [{ ...tab, label: String(i + 1) }] : [];
