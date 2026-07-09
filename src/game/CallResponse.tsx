@@ -158,6 +158,7 @@ export function CallResponse({
           if (timerRef.current) clearInterval(timerRef.current);
           timerRef.current = setInterval(() => {
             setRemaining((r) => {
+              if (document.hidden) return r; // clock freezes while away
               const nr = Math.max(0, Math.round((r - 0.1) * 10) / 10);
               if (nr <= 0) {
                 handleMissRef.current();

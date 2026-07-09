@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePitchDetection } from "./hooks/usePitchDetection";
 import { useSettings } from "./store/settings";
 import { useProgress, type GameModeId } from "./store/progress";
@@ -47,6 +47,49 @@ export default function App() {
     registerNoteHandler(null);
     setScreen("home");
   }, [registerNoteHandler]);
+
+  // Release the microphone whenever the page is hidden (switched tab or
+  // app) so the game never blocks other audio — holding a mic capture is
+  // what pauses/ducks YouTube and music apps in the background. When the
+  // player returns to a mic-driven game screen, the mic resumes on its own
+  // (permission is already granted, so there's no prompt).
+  const MIC_SCREENS: Screen[] = [
+    "noteHunt",
+    "intervalEcho",
+    "callResponse",
+    "songFlight",
+    "aurora",
+    "fretFinder",
+  ];
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  const isListeningRef = useRef(pitch.isListening);
+  isListeningRef.current = pitch.isListening;
+  const startRef = useRef(start);
+  startRef.current = start;
+  const stopRef = useRef(pitch.stop);
+  stopRef.current = pitch.stop;
+  const resumeMicRef = useRef(false);
+  const micScreensRef = useRef(MIC_SCREENS);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (isListeningRef.current) {
+          resumeMicRef.current = true;
+          stopRef.current();
+        }
+      } else if (resumeMicRef.current) {
+        resumeMicRef.current = false;
+        if (micScreensRef.current.includes(screenRef.current)) {
+          void startRef.current();
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   const pitchProps = {
     currentNote: pitch.currentNote,

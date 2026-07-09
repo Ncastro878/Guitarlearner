@@ -204,7 +204,13 @@ function MicSection({
           useFlats={useFlats}
         />
         <p className="text-center text-xs text-slate-500">
-          Mic is live — pluck a string to check it, then pick a mode.
+          Mic is live — pluck a string to check it, then pick a mode.{" "}
+          <button
+            onClick={pitch.stop}
+            className="text-slate-400 underline underline-offset-2 transition hover:text-slate-200"
+          >
+            Turn mic off
+          </button>
         </p>
       </div>
     );

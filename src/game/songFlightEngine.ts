@@ -205,6 +205,12 @@ export class SongFlightEngine {
   // --- frame -----------------------------------------------------------------
 
   private frame(t: number): void {
+    // rAF stops while the tab is hidden; when it resumes after a long gap,
+    // shift the song clock forward by the gap so the run PAUSES while the
+    // player is away instead of skipping ahead into a wall of misses.
+    if (this.lastT !== null && t - this.lastT > 500 && this.startT !== null) {
+      this.startT += t - this.lastT - 16;
+    }
     const dt = this.lastT === null ? 1 / 60 : Math.min(0.05, (t - this.lastT) / 1000);
     this.lastT = t;
     const now = this.elapsed(t);
