@@ -39,7 +39,7 @@ export function NeckHeatmap({ memory, idFor, maxFret = 12 }: NeckHeatmapProps) {
 
   return (
     <div>
-      <Fretboard highlights={highlights} minFrets={maxFret} />
+      <Fretboard highlights={highlights} minFrets={maxFret} showStringLabels />
       <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
         <LegendDot color={BOX_COLORS[0]} label="missed" />
         <LegendDot color={BOX_COLORS[2]} label="learning" />

@@ -449,6 +449,7 @@ export function FretFinder({
           {feedback === "miss" && question && (
             <div className="mt-5 w-full">
               <Fretboard
+                showStringLabels
                 highlights={question.positions.map((p) => ({
                   string: p.string,
                   fret: p.fret,

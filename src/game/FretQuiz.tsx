@@ -460,6 +460,7 @@ export function FretQuiz({
               label: "?",
               color: "#f59e0b",
               stroke: "#92400e",
+              r: 10.5,
             }
           : {
               string: question.string,
@@ -467,6 +468,7 @@ export function FretQuiz({
               label: answerName,
               color: feedback === "correct" ? "#10b981" : "#f43f5e",
               stroke: feedback === "correct" ? "#065f46" : "#881337",
+              r: 10.5,
             },
       ]
     : [];
@@ -514,11 +516,16 @@ export function FretQuiz({
 
         {/* the neck */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3">
-          <Fretboard highlights={highlight} minFrets={level.maxFret} />
-          <p className="mt-1 text-center text-xs text-slate-500">
+          <Fretboard
+            highlights={highlight}
+            minFrets={level.maxFret}
+            showStringLabels
+            activeString={question?.string}
+          />
+          <p className="mt-1.5 text-center text-sm text-slate-400">
             {question && (
               <>
-                <span className="font-semibold text-slate-300">
+                <span className="font-bold text-amber-300">
                   {stringLabel(question.string)}
                 </span>{" "}
                 string ·{" "}
